@@ -1,1 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업무자동화 : 트리거</title>
 
+<!-- PyScript -->
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:       #f2ece3;
+  --surface:  #ffffff;
+  --border:   #e0d8cc;
+  --accent:   #7c5c3a;
+  --text:     #2e2318;
+  --muted:    #a0907e;
+  --found:    #3a7c5c;
+  --notfound: #c0392b;
+  --radius:   12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 16px 80px;
+}
+
+/* ── 로딩 오버레이 ── */
+#py-loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s;
+}
+#py-loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--accent); margin-bottom: 28px;
+}
+.loading-bar-wrap {
+  width: 240px; height: 3px;
+  background: var(--border); border-radius: 99px; overflow: hidden;
+}
+.loading-bar {
+  height: 100%; width: 0%;
+  background: var(--accent); border-radius: 99px;
+  animation: loadProg 2.2s ease forwards;
+}
+@keyframes loadProg { to { width: 92%; } }
+.loading-msg {
+  margin-top: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── 헤더 ── */
+.header {
+  text-align: center; margin-bottom: 40px;
+  animation: fadeUp 0.6s ease both;
+}
+.header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem; font-weight: 600; color: var(--accent);
+}
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+.header .ver {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; margin-top: 10px;
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  width: 100%; max-width: 700px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.08s; }
+.card:nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* ── 드롭존 ── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px; padding: 34px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(124,92,58,0.04);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon { font-size: 2rem; margin-bottom: 8px; }
+.drop-text { font-size: 0.92rem; color: var(--muted); }
+.drop-text span { color: var(--accent); font-weight: 700; }
+.drop-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.file-loaded {
+  display: none; margin-top: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem; color: var(--found);
+  animation: fadeUp 0.25s ease both;
+  position: relative; z-index: 1; pointer-events: none;
+}
+
+/* ── 키워드 영역 ── */
+
+textarea {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; resize: vertical; min-height: 100px;
+  line-height: 1.7; transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: var(--muted); }
+
+.kw-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-height: 0;
+}
+.kw-tag {
+  background: rgba(124,92,58,0.10);
+  border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 20px;
+  padding: 3px 11px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.77rem;
+  animation: tagIn 0.15s ease both;
+}
+@keyframes tagIn {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.hint { font-size: 0.77rem; color: var(--muted); margin-top: 10px; }
+
+/* ── 검색 버튼 ── */
+.btn-search {
+  width: 100%; max-width: 700px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 14px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.24s ease both;
+}
+.btn-search:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.btn-search:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── 결과 카드 ── */
+.results-card {
+  display: none; width: 100%; max-width: 700px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.results-header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase;
+}
+.results-summary {
+  display: flex; gap: 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted);
+}
+.s-num           { color: var(--accent); font-weight: 600; }
+.s-num.found     { color: var(--found); }
+.s-num.notfound  { color: var(--notfound); }
+
+/* ── 결과 테이블 ── */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+  padding: 10px 18px; border-bottom: 1px solid var(--border); text-align: left;
+}
+tbody tr { animation: fadeUp 0.3s ease both; }
+tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+tbody td { padding: 13px 18px; vertical-align: middle; }
+
+.dot {
+  display: inline-block; width: 9px; height: 9px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.dot.found    { background: var(--found);    box-shadow: 0 0 7px var(--found); }
+.dot.notfound { background: var(--notfound); box-shadow: 0 0 7px var(--notfound); }
+
+.kw-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; }
+.files-small { font-size: 0.71rem; color: var(--muted); margin-top: 3px; }
+
+.badge {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.73rem; font-weight: 700;
+  padding: 3px 11px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.badge.found    { background: rgba(58,124,92,0.10); color: var(--found);    border: 1px solid rgba(58,124,92,0.35); }
+.badge.notfound { background: rgba(192,57,43,0.10); color: var(--notfound); border: 1px solid rgba(192,57,43,0.30); }
+
+.count-cell {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+  color: var(--muted); text-align: right;
+}
+
+/* ── CSV 다운로드 버튼 ── */
+.btn-csv {
+  display: block; margin: 16px 20px 18px auto;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent);
+  cursor: pointer; transition: border-color 0.2s;
+  width: fit-content;
+}
+.btn-csv:hover { border-color: var(--accent); }
+
+/* ── PyScript 기본 스타일 숨기기 ── */
+py-config, py-script { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 로딩 오버레이 -->
+<div id="py-loading">
+  <div class="loading-logo"># BPA : 트리거 #</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-msg">Python 런타임 초기화 중...</div>
+</div>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1># 업무자동화 : 트리거 #</h1>
+  <div class="sub">텍스트 파일에서 특정 키워드 존재 여부 확인 (대소문자 구분 없음)</div>
+  <div class="ver">v20260318 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; PyScript</div>
+</div>
+
+<!-- 01. 배포 파일 -->
+<div class="card">
+  <div class="card-title">01. 배포 파일</div>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" multiple>
+    <div class="drop-text"><span>클릭</span> 또는 파일을 여기에 드래그하세요</div>
+    <div class="drop-sub">모든 파일 형식 지원 &nbsp;·&nbsp; 여러 파일 동시 업로드 가능</div>
+  </div>
+  <div class="file-loaded" id="fileLoaded"></div>
+</div>
+
+<!-- 02. 키워드 입력 -->
+<div class="card">
+  <div class="card-title">02. 테이블 목록</div>
+  <div class="drop-zone" id="kwDropZone">
+    <input type="file" id="kwFileInput" multiple>
+    <div class="drop-text"><span>클릭</span> 또는 파일을 여기에 드래그하세요</div>
+    <div class="drop-sub">모든 파일 형식 지원 &nbsp;·&nbsp; 여러 파일 동시 업로드 가능</div>
+    <div class="file-loaded" id="kwFileLoaded"></div>
+  </div>
+  <textarea id="keywordInput" style="margin-top:16px;"
+    placeholder="ex1) 테이블1, 테이블2&#10;ex2) 테이블1&#10;     테이블2"></textarea>
+  <div class="kw-tags" id="kwTags"></div>
+  <div class="hint">쉼표 또는 줄바꿈으로 구분 &nbsp;·&nbsp; 파일 업로드 시 내용이 자동으로 채워집니다</div>
+</div>
+
+<!-- 검색 버튼 -->
+<button class="btn-search" id="searchBtn" disabled>검색 실행</button>
+
+<!-- 결과 -->
+<div class="results-card" id="resultsCard">
+  <div class="results-header">
+    <span class="results-header-title">검색 결과</span>
+    <div class="results-summary" id="resultsSummary"></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32px"></th>
+        <th>키워드 / 파일</th>
+        <th style="text-align:right">횟수</th>
+        <th style="text-align:center">결과</th>
+      </tr>
+    </thead>
+    <tbody id="resultsTbody"></tbody>
+  </table>
+  <button class="btn-csv" id="csvBtn" onclick="downloadCSV()">?? CSV 다운로드</button>
+</div>
+
+<!-- ?????????????? PyScript 설정 ?????????????? -->
+<py-config>
+packages = ["chardet"]
+</py-config>
+
+<script type="py">
+import re
+import io
+import base64
+import chardet
+from js import document, window, console, URL, Blob
+from pyodide.ffi import create_proxy
+
+# ── 전역 상태 ─────────────────────────────────────────────────────────────
+file_contents: dict = {}   # {filename: lowercase_text}
+last_results:  list = []   # 마지막 검색 결과
+
+# ── 인코딩 감지 및 디코딩 ─────────────────────────────────────────────────
+def decode_bytes(raw: bytes) -> str:
+    detected = chardet.detect(raw)
+    enc = detected.get("encoding") or "utf-8"
+    try:
+        return raw.decode(enc)
+    except Exception:
+        return raw.decode("utf-8", errors="replace")
+
+# ── 키워드 파싱 ───────────────────────────────────────────────────────────
+def parse_keywords(raw: str) -> list:
+    tokens = re.split(r"[,\n]", raw)
+    seen, result = set(), []
+    for t in tokens:
+        t = t.strip()
+        if t and t not in seen:
+            seen.add(t)
+            result.append(t)
+    return result
+
+# ── 출현 횟수 카운트 ──────────────────────────────────────────────────────
+def count_occurrences(text: str, kw: str) -> int:
+    count = pos = 0
+    while (pos := text.find(kw, pos)) != -1:
+        count += 1
+        pos += len(kw)
+    return count
+
+# ── 검색 로직 ─────────────────────────────────────────────────────────────
+def run_search(keywords: list) -> list:
+    results = []
+    for kw in keywords:
+        kw_lower = kw.lower()
+        found_files, total = [], 0
+        for fname, text in file_contents.items():
+            cnt = count_occurrences(text, kw_lower)
+            if cnt:
+                found_files.append({"name": fname, "count": cnt})
+                total += cnt
+        results.append({
+            "kw":    kw,
+            "found": len(found_files) > 0,
+            "files": found_files,
+            "count": total,
+        })
+    return results
+
+# ── 검색 버튼 활성화 체크 ────────────────────────────────────────────────
+def check_ready():
+    kw_raw  = document.getElementById("keywordInput").value
+    has_kws = len(parse_keywords(kw_raw)) > 0
+    has_files = len(file_contents) > 0
+    document.getElementById("searchBtn").disabled = not (has_kws and has_files)
+
+# ── 키워드 태그 미리보기 ──────────────────────────────────────────────────
+def update_kw_tags(raw: str):
+    kws = parse_keywords(raw)
+    container = document.getElementById("kwTags")
+    container.innerHTML = "".join(
+        f'<span class="kw-tag">{k}</span>' for k in kws
+    )
+
+# ── 결과 렌더링 ───────────────────────────────────────────────────────────
+def render_results(results: list):
+    global last_results
+    last_results = results
+
+    found_n    = sum(1 for r in results if r["found"])
+    notfound_n = len(results) - found_n
+
+    # 요약
+    summary = document.getElementById("resultsSummary")
+    summary.innerHTML = (
+        f'<span>총 <span class="s-num">{len(results)}</span>개</span>'
+        f'<span>발견 <span class="s-num found">{found_n}</span>개</span>'
+        f'<span>미발견 <span class="s-num notfound">{notfound_n}</span>개</span>'
+    )
+
+    # 행 생성
+    tbody = document.getElementById("resultsTbody")
+    tbody.innerHTML = ""
+    for i, r in enumerate(results):
+        dot_cls   = "found"  if r["found"] else "notfound"
+        badge_txt = "존재"   if r["found"] else "없음"
+        count_txt = f"{r['count']}회" if r["found"] else "?"
+        files_str = " &nbsp;·&nbsp; ".join(
+            f"{f['name']}({f['count']}회)" for f in r["files"]
+        )
+        files_div = f'<div class="files-small">{files_str}</div>' if r["found"] else ""
+
+        tr = document.createElement("tr")
+        tr.style.animationDelay = f"{i * 0.045}s"
+        tr.innerHTML = f"""
+          <td><span class="dot {dot_cls}"></span></td>
+          <td>
+            <div class="kw-mono">{r['kw']}</div>
+            {files_div}
+          </td>
+          <td class="count-cell">{count_txt}</td>
+          <td style="text-align:center">
+            <span class="badge {dot_cls}">{badge_txt}</span>
+          </td>
+        """
+        tbody.appendChild(tr)
+
+    card = document.getElementById("resultsCard")
+    card.style.display = "block"
+    card.scrollIntoView({"behavior": "smooth", "block": "start"})
+
+# ── 파일 읽기 (ArrayBuffer → Python bytes) ───────────────────────────────
+async def process_uploaded_files(js_files):
+    global file_contents
+    file_contents = {}
+    total = js_files.length
+
+    for i in range(total):
+        f    = js_files.item(i)
+        buf  = await f.arrayBuffer()
+        raw  = bytes(window.Uint8Array.new(buf))
+        text = decode_bytes(raw).lower()
+        file_contents[f.name] = text
+
+    names = list(file_contents.keys())
+    label = (names[0] if len(names) == 1
+             else f"{len(names)}개 파일: {', '.join(names)}")
+    loaded_el = document.getElementById("fileLoaded")
+    loaded_el.textContent = f"? {label}"
+    loaded_el.style.display = "block"
+    check_ready()
+
+# ── fileInput change 핸들러 ───────────────────────────────────────────────
+async def on_file_change(event):
+    files = event.target.files
+    if files.length > 0:
+        await process_uploaded_files(files)
+
+# ── 드롭존 드래그앤드롭 핸들러 ───────────────────────────────────────────
+async def on_drop_files(event):
+    event.preventDefault()
+    dz = document.getElementById("dropZone")
+    dz.classList.remove("dragover")
+    files = event.dataTransfer.files
+    if files.length > 0:
+        await process_uploaded_files(files)
+
+def on_dragover(event):
+    event.preventDefault()
+    document.getElementById("dropZone").classList.add("dragover")
+
+def on_dragleave(event):
+    document.getElementById("dropZone").classList.remove("dragover")
+
+# ── 키워드 파일 로드 (여러 파일, 내용 합산) ──────────────────────────────
+async def load_kw_files(js_files):
+    ta     = document.getElementById("keywordInput")
+    lines  = []
+    loaded = []
+    for i in range(js_files.length):
+        f   = js_files.item(i)
+        buf = await f.arrayBuffer()
+        raw = bytes(window.Uint8Array.new(buf))
+        txt = decode_bytes(raw).strip()
+        lines.append(txt)
+        loaded.append(f.name)
+
+    ta.value = "\n".join(lines)
+    label = (loaded[0] if len(loaded) == 1
+             else f"{len(loaded)}개 파일: {', '.join(loaded)}")
+    loaded_el = document.getElementById("kwFileLoaded")
+    loaded_el.textContent = f"? {label}"
+    loaded_el.style.display = "block"
+    update_kw_tags(ta.value)
+    check_ready()
+
+# ── kwFileInput change 핸들러 ─────────────────────────────────────────────
+async def on_kw_file_change(event):
+    files = event.target.files
+    if files.length > 0:
+        await load_kw_files(files)
+
+# ── kwDropZone 드래그앤드롭 핸들러 ───────────────────────────────────────
+async def on_kw_drop(event):
+    event.preventDefault()
+    document.getElementById("kwDropZone").classList.remove("dragover")
+    files = event.dataTransfer.files
+    if files.length > 0:
+        await load_kw_files(files)
+
+def on_kw_dragover(event):
+    event.preventDefault()
+    document.getElementById("kwDropZone").classList.add("dragover")
+
+def on_kw_dragleave(event):
+    document.getElementById("kwDropZone").classList.remove("dragover")
+
+# ── 키워드 textarea 입력 핸들러 ───────────────────────────────────────────
+def on_kw_input(event):
+    update_kw_tags(event.target.value)
+    check_ready()
+
+# ── 검색 버튼 클릭 ────────────────────────────────────────────────────────
+def on_search_click(event):
+    kw_raw   = document.getElementById("keywordInput").value
+    keywords = parse_keywords(kw_raw)
+    if not file_contents or not keywords:
+        return
+    results = run_search(keywords)
+    render_results(results)
+
+# ── 이벤트 바인딩 ─────────────────────────────────────────────────────────
+document.getElementById("fileInput").addEventListener(
+    "change", create_proxy(on_file_change))
+
+dz = document.getElementById("dropZone")
+dz.addEventListener("dragover",  create_proxy(on_dragover))
+dz.addEventListener("dragleave", create_proxy(on_dragleave))
+dz.addEventListener("drop",      create_proxy(on_drop_files))
+
+document.getElementById("kwFileInput").addEventListener(
+    "change", create_proxy(on_kw_file_change))
+
+kd = document.getElementById("kwDropZone")
+kd.addEventListener("dragover",  create_proxy(on_kw_dragover))
+kd.addEventListener("dragleave", create_proxy(on_kw_dragleave))
+kd.addEventListener("drop",      create_proxy(on_kw_drop))
+
+document.getElementById("keywordInput").addEventListener(
+    "input", create_proxy(on_kw_input))
+
+document.getElementById("searchBtn").addEventListener(
+    "click", create_proxy(on_search_click))
+
+# ── 로딩 오버레이 제거 ────────────────────────────────────────────────────
+loading = document.getElementById("py-loading")
+loading.classList.add("hidden")
+window.setTimeout(create_proxy(lambda: loading.remove()), 450)
+</script>
+
+<!-- CSV 다운로드 (JS) -->
+<script>
+function downloadCSV() {
+  // last_results는 PyScript가 window에 노출하지 않으므로 DOM에서 읽음
+  const rows = [["키워드", "발견여부", "발견횟수", "파일목록"]];
+  document.querySelectorAll("#resultsTbody tr").forEach(tr => {
+    const tds   = tr.querySelectorAll("td");
+    const kw    = tds[1].querySelector(".kw-mono")?.textContent?.trim() || "";
+    const badge = tds[3].querySelector(".badge")?.textContent?.trim() || "";
+    const cnt   = tds[2].textContent.trim().replace("회","") || "0";
+    const files = tds[1].querySelector(".files-small")?.textContent?.trim() || "";
+    rows.push([kw, badge, cnt, files]);
+  });
+  const csv  = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const bom  = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = "bpa_trigger_result.csv";
+  a.click(); URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
