@@ -96,7 +96,6 @@ body {
   0%,100% { opacity: 1; } 50% { opacity: 0.3; }
 }
 
-/* ── 새로고침 버튼 ── */
 .btn-reload {
   margin-left: auto;
   background: transparent;
@@ -111,10 +110,42 @@ body {
 }
 .btn-reload:hover { color: var(--accent); }
 
+/* ── 홈으로 버튼 ── */
+.btn-home {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 22px;
+  margin: 10px 12px 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+  flex-shrink: 0;
+}
+.btn-home:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+.btn-home .home-icon {
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.btn-home .home-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.btn-home:hover .home-icon,
+.btn-home:hover .home-label { color: var(--accent); }
+
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 0 16px;
+  padding: 4px 0 16px;
 }
 .sidebar-nav::-webkit-scrollbar { width: 4px; }
 .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -323,6 +354,12 @@ body {
     <button class="btn-reload" title="다시 불러오기" onclick="loadLinksFromJSON()">reload</button>
   </div>
 
+  <!-- 홈으로 버튼 -->
+  <button class="btn-home" onclick="goHome()">
+    <span class="home-icon">?</span>
+    <span class="home-label">홈으로</span>
+  </button>
+
   <nav class="sidebar-nav" id="navList"></nav>
 </aside>
 
@@ -387,19 +424,17 @@ function showToast(msg, type = "") {
 function setStatus(state, text) {
   const dot  = document.getElementById("statusDot");
   const span = document.getElementById("statusText");
-  dot.className  = "status-dot " + state;
+  dot.className    = "status-dot " + state;
   span.textContent = text;
 }
 
 async function loadLinksFromJSON() {
   setStatus("loading", "bpa_links.json 로딩 중...");
   try {
-    // cache-busting 파라미터로 항상 최신 파일 로드
     const res = await fetch("./bpa_links.json?t=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
 
-    // 배열 or {links:[]} 형태 모두 허용
     const imported = Array.isArray(data) ? data : (data.links || []);
     links = imported.map(l => ({
       id:    l.id    || uid(),
@@ -418,6 +453,27 @@ async function loadLinksFromJSON() {
 }
 
 /* ─────────────────────────────────────
+   홈으로
+───────────────────────────────────── */
+function goHome() {
+  activeId = null;
+  renderNav();
+
+  document.getElementById("topTitle").textContent = "왼쪽 링크를 선택하세요";
+  document.getElementById("topUrl").textContent   = "";
+
+  const btnTab = document.getElementById("btnNewTab");
+  btnTab.href = "#";
+  btnTab.classList.remove("visible");
+
+  const iframe = document.getElementById("viewer");
+  iframe.style.display = "none";
+  iframe.src = "about:blank";
+
+  document.getElementById("emptyState").style.display = "";
+}
+
+/* ─────────────────────────────────────
    렌더링
 ───────────────────────────────────── */
 function renderNav() {
@@ -429,7 +485,7 @@ function renderNav() {
       <div class="nav-empty">
         링크가 없습니다.<br><br>
         root에 <code>bpa_links.json</code> 파일을<br>
-        추가하고 ? 버튼을 눌러주세요.
+        추가하고 reload 버튼을 눌러주세요.
       </div>`;
     return;
   }
