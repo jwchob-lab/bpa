@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Analysis Dashboard</title>
+    
+    <!-- Tailwind CSS & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <!-- PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
+        .card { background: white; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">스토리지 용량 분석 및 수요 예측</h1>
+            <p class="text-slate-500">인프라 자원 효율화 분석 리포트 (2025-2026)</p>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card p-6 border-l-4 border-blue-500">
+                <p class="text-sm font-medium text-slate-500 mb-1">현재 사용률 (26년 3월)</p>
+                <div class="flex items-baseline">
+                    <span class="text-3xl font-bold text-slate-800">75.0%</span>
+                    <span class="ml-2 text-sm font-medium text-blue-600">▲ 1.5%</span>
+                </div>
+            </div>
+            <div class="card p-6 border-l-4 border-orange-500">
+                <p class="text-sm font-medium text-slate-500 mb-1">90% 임계치 도달 예상</p>
+                <div id="stat-90" class="text-3xl font-bold text-slate-800">계산 중...</div>
+            </div>
+            <div class="card p-6 border-l-4 border-red-500">
+                <p class="text-sm font-medium text-slate-500 mb-1">100% 용량 부족 예상</p>
+                <div id="stat-100" class="text-3xl font-bold text-slate-800 text-red-600">계산 중...</div>
+            </div>
+        </div>
+
+        <!-- Main Chart -->
+        <div class="card p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-semibold text-slate-800">월별 사용량 및 장애 시점 예측 곡선</h2>
+                <div class="flex items-center text-sm text-slate-500">
+                    <span class="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span> 실적
+                    <span class="inline-block w-3 h-3 bg-red-400 rounded-full ml-4 mr-2"></span> 예측
+                </div>
+            </div>
+            <div id="plot-area" class="w-100 flex justify-center items-center min-h-[400px]">
+                <div class="flex flex-col items-center">
+                    <div class="loading-spinner mb-4"></div>
+                    <p class="text-slate-500">파이썬 분석 엔진을 가동하고 있습니다...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-8 text-center text-xs text-slate-400">
+            본 데이터는 시계열 선형 회귀 분석 모델을 기반으로 생성되었습니다. 예측치는 실제 서버 부하에 따라 달라질 수 있습니다.
+        </div>
+    </div>
+
+<py-config>
+    packages = ["matplotlib", "pandas", "numpy"]
+</py-config>
+
+<script type="py">
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+from pyscript import display
+import matplotlib.font_manager as fm
+import urllib.request
+import os
+
+# 1. 한글 폰트 설정 (나눔고딕 실시간 로드)
+def setup_korean_font():
+    font_url = "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+    font_path = "/tmp/NanumGothic.ttf"
+    if not os.path.exists(font_path):
+        urllib.request.urlretrieve(font_url, font_path)
+    
+    font_prop = fm.FontProperties(fname=font_path)
+    fm.fontManager.addfont(font_path)
+    plt.rc('font', family=font_prop.get_name())
+    plt.rcParams['axes.unicode_minus'] = False
+    return font_prop
+
+def run_analysis():
+    f_prop = setup_korean_font()
+    
+    # 데이터 설정
+    dates = pd.date_range(start="2025-04-01", periods=12, freq='MS')
+    usage_pct = [55.0, 56.2, 57.5, 57.2, 57.8, 58.5, 61.0, 64.2, 67.5, 70.8, 73.5, 75.0]
+
+    # 회귀 분석 (최근 가속 추세 반영)
+    x = np.array(range(len(usage_pct)))
+    recent_x = x[6:]
+    recent_y = np.array(usage_pct[6:])
+    slope, intercept = np.polyfit(recent_x, recent_y, 1)
+
+    # 예측 데이터 생성
+    future_x = np.array(range(12, 24))
+    future_dates = pd.date_range(start="2026-04-01", periods=12, freq='MS')
+    future_y = slope * future_x + intercept
+
+    all_dates = dates.append(future_dates)
+    all_usage = np.concatenate([usage_pct, future_y])
+
+    # 임계치 계산
+    idx_90 = np.where(all_usage >= 90)[0][0]
+    idx_100 = np.where(all_usage >= 100)[0][0]
+    
+    date_90 = all_dates[idx_90].strftime('%Y. %m')
+    date_100 = all_dates[idx_100].strftime('%Y. %m')
+
+    # 상단 카드 업데이트
+    display(date_90, target="stat-90", append=False)
+    display(date_100, target="stat-100", append=False)
+
+    # 그래프 시각화 (사이트 디자인 스타일 반영)
+    fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
+    
+    # 그리드 설정
+    ax.grid(True, axis='y', linestyle='--', alpha=0.3, color='#94a3b8')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('#e2e8f0')
+    ax.spines['bottom'].set_color('#e2e8f0')
+
+    # 영역 채우기 (Area Chart 스타일)
+    ax.fill_between(dates, usage_pct, color='#3b82f6', alpha=0.1)
+    ax.fill_between(future_dates, future_y, color='#f87171', alpha=0.05)
+
+    # 선 그래프
+    ax.plot(dates, usage_pct, color='#3b82f6', linewidth=3, marker='o', markersize=6, markerfacecolor='white', markeredgewidth=2, label='사용 실적')
+    ax.plot(future_dates, future_y, color='#f87171', linewidth=3, linestyle='--', marker='s', markersize=6, markerfacecolor='white', markeredgewidth=2, label='미래 예측')
+
+    # 임계선
+    ax.axhline(y=90, color='#f59e0b', linestyle=':', linewidth=1.5, alpha=0.7)
+    ax.axhline(y=100, color='#ef4444', linestyle='-', linewidth=1, alpha=0.8)
+
+    # 텍스트 라벨링
+    ax.text(all_dates[idx_90], 91, f' 90% 임계치 ({date_90})', color='#b45309', fontweight='bold', fontproperties=f_prop)
+    ax.text(all_dates[idx_100], 101, f' 100% 부족 ({date_100})', color='#b91c1c', fontweight='bold', fontproperties=f_prop)
+
+    ax.tick_params(colors='#64748b', labelsize=10)
+    ax.set_ylim(50, 110)
+    
+    plt.tight_layout()
+    display(fig, target="plot-area", append=False)
+
+run_analysis()
+</script>
+
+</body>
+</html>
