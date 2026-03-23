@@ -1,6 +1,5 @@
 {
   "links": [
-    { "label": "공통   : 트리거",  "url": "./app_trigger_py.html" },
     { "label": "공통   : 트리거",  "url": "./app/app_trigger_py.html" },
     { "label": "오라클 : 권한백업",  "url": "./app/app_oracle_grt_tab_py.html" },
     { "label": "오라클 : XPLAN", "url": "./app/app_oracle_xplan_py.html" }
