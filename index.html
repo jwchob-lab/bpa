@@ -66,60 +66,50 @@ body {
   margin-top: 6px;
 }
 
-/* ── JSON 내보내기/불러오기 툴바 ── */
-.json-toolbar {
-  display: flex;
-  gap: 6px;
-  padding: 10px 16px;
+/* ── 로딩 상태 표시 ── */
+.json-status {
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
   flex-shrink: 0;
   background: var(--bg);
 }
-.btn-json {
-  flex: 1;
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.status-dot.ok     { background: var(--found); box-shadow: 0 0 6px var(--found); }
+.status-dot.error  { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.status-dot.loading {
+  background: var(--accent);
+  animation: pulse 1s ease infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+/* ── 새로고침 버튼 ── */
+.btn-reload {
+  margin-left: auto;
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 6px 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem;
+  border: none;
   color: var(--muted);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
-  text-align: center;
-  white-space: nowrap;
-}
-.btn-json:hover { border-color: var(--accent); color: var(--accent); }
-.btn-json.export { }
-.btn-json.import { }
-
-/* 불러오기용 hidden input */
-#jsonFileInput { display: none; }
-
-/* ── 토스트 알림 ── */
-.toast {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  background: var(--text);
-  color: #fff;
-  font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
-  padding: 9px 20px;
-  border-radius: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
-  z-index: 99999;
-  white-space: nowrap;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+  line-height: 1;
 }
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-.toast.success { background: var(--found); }
-.toast.error   { background: var(--danger); }
+.btn-reload:hover { color: var(--accent); }
 
 .sidebar-nav {
   flex: 1;
@@ -176,81 +166,15 @@ body {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.75rem;
   color: var(--muted);
+  line-height: 1.7;
 }
-
-/* ── 링크 추가 영역 ── */
-.sidebar-add {
-  flex-shrink: 0;
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
-}
-
-.btn-add-toggle {
-  width: 100%;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.78rem;
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-  text-align: left;
-}
-.btn-add-toggle:hover { border-color: var(--accent); color: var(--accent); }
-
-.add-form {
-  display: none;
-  margin-top: 10px;
-}
-.add-form.open { display: block; animation: fadeUp 0.18s ease both; }
-
-.add-form input {
-  width: 100%;
+.nav-empty code {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 7px 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.78rem;
-  color: var(--text);
-  outline: none;
-  margin-bottom: 6px;
-  transition: border-color 0.2s;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.72rem;
 }
-.add-form input:focus { border-color: var(--accent); }
-.add-form input::placeholder { color: var(--muted); }
-
-.add-form-row { display: flex; gap: 6px; }
-
-.btn-confirm {
-  flex: 1;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  padding: 7px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.btn-confirm:hover { opacity: 0.85; }
-
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 7px 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.btn-cancel:hover { border-color: var(--accent); }
 
 /* ?? 메인 뷰어 ?? */
 .main {
@@ -342,9 +266,8 @@ body {
   z-index: 9999;
   box-shadow: 0 4px 20px rgba(46,35,24,0.12);
   min-width: 140px;
-  animation: fadeUp 0.12s ease both;
 }
-.ctx-menu.open { display: block; }
+.ctx-menu.open { display: block; animation: fadeUp 0.12s ease both; }
 .ctx-item {
   padding: 8px 16px;
   font-family: 'IBM Plex Mono', monospace;
@@ -355,6 +278,28 @@ body {
 }
 .ctx-item:hover { background: var(--hover); }
 .ctx-item.danger { color: var(--danger); }
+
+/* ── 토스트 ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--text);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  padding: 9px 20px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 99999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--found); }
+.toast.error   { background: var(--danger); }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -371,26 +316,14 @@ body {
     <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho</div>
   </div>
 
-  <!-- JSON 내보내기 / 불러오기 -->
-  <div class="json-toolbar">
-    <button class="btn-json export" onclick="exportJSON()">↓ JSON 저장</button>
-    <button class="btn-json import" onclick="document.getElementById('jsonFileInput').click()">↑ JSON 불러오기</button>
-    <input type="file" id="jsonFileInput" accept=".json" onchange="importJSON(event)">
+  <!-- JSON 상태 표시 -->
+  <div class="json-status">
+    <span class="status-dot loading" id="statusDot"></span>
+    <span id="statusText">bpa_links.json 로딩 중...</span>
+    <button class="btn-reload" title="다시 불러오기" onclick="loadLinksFromJSON()">?</button>
   </div>
 
   <nav class="sidebar-nav" id="navList"></nav>
-
-  <div class="sidebar-add">
-    <button class="btn-add-toggle" onclick="toggleForm()">+ 링크 추가</button>
-    <div class="add-form" id="addForm">
-      <input type="text" id="inputLabel" placeholder="이름  (ex: 구글)">
-      <input type="text" id="inputUrl"   placeholder="URL  (ex: https://google.com)">
-      <div class="add-form-row">
-        <button class="btn-confirm" onclick="addLink()">추가</button>
-        <button class="btn-cancel"  onclick="toggleForm()">취소</button>
-      </div>
-    </div>
-  </div>
 </aside>
 
 <!-- ?? 메인 ?? -->
@@ -414,7 +347,6 @@ body {
 <!-- 컨텍스트 메뉴 -->
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-item" onclick="ctxNewTab()">↗ 새탭에서 열기</div>
-  <div class="ctx-item danger" onclick="ctxDelete()">? 삭제</div>
 </div>
 
 <!-- 토스트 -->
@@ -422,18 +354,12 @@ body {
 
 <script>
 /* ─────────────────────────────────────
-   상태 & 스토리지
+   상태
 ───────────────────────────────────── */
-const KEY = "bpa_links_v2";
 let links    = [];
 let activeId = null;
 let ctxId    = null;
 
-function save() { localStorage.setItem(KEY, JSON.stringify(links)); }
-function load() {
-  try { links = JSON.parse(localStorage.getItem(KEY)) || []; }
-  catch { links = []; }
-}
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function esc(s) {
   return String(s)
@@ -449,54 +375,46 @@ function showToast(msg, type = "") {
   const el = document.getElementById("toast");
   el.textContent = msg;
   el.className = "toast" + (type ? " " + type : "");
-  // force reflow
   void el.offsetWidth;
   el.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
 }
 
 /* ─────────────────────────────────────
-   JSON 내보내기
+   JSON 자동 로드 (fetch)
 ───────────────────────────────────── */
-function exportJSON() {
-  if (!links.length) { showToast("저장할 링크가 없습니다", "error"); return; }
-  const data = JSON.stringify({ bpa_version: "1", links }, null, 2);
-  const blob = new Blob([data], { type: "application/json;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href = url;
-  a.download = "bpa_links.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("? JSON 파일로 저장됐습니다", "success");
+function setStatus(state, text) {
+  const dot  = document.getElementById("statusDot");
+  const span = document.getElementById("statusText");
+  dot.className  = "status-dot " + state;
+  span.textContent = text;
 }
 
-/* ─────────────────────────────────────
-   JSON 불러오기
-───────────────────────────────────── */
-function importJSON(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      // 배열 직접이거나 {links:[]} 형태 모두 허용
-      const imported = Array.isArray(parsed) ? parsed : (parsed.links || []);
-      if (!imported.length) { showToast("링크 데이터가 없습니다", "error"); return; }
-      // id 없는 항목엔 자동 부여
-      links = imported.map(l => ({ id: l.id || uid(), label: l.label || l.url, url: l.url }));
-      save();
-      renderNav();
-      showToast(`? ${links.length}개 링크를 불러왔습니다`, "success");
-    } catch {
-      showToast("JSON 파싱 실패 ? 올바른 파일인지 확인하세요", "error");
-    }
-    // 같은 파일 재선택 허용
-    event.target.value = "";
-  };
-  reader.readAsText(file);
+async function loadLinksFromJSON() {
+  setStatus("loading", "bpa_links.json 로딩 중...");
+  try {
+    // cache-busting 파라미터로 항상 최신 파일 로드
+    const res = await fetch("./bpa_links.json?t=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    // 배열 or {links:[]} 형태 모두 허용
+    const imported = Array.isArray(data) ? data : (data.links || []);
+    links = imported.map(l => ({
+      id:    l.id    || uid(),
+      label: l.label || l.url,
+      url:   l.url
+    }));
+
+    setStatus("ok", `bpa_links.json  ·  ${links.length}개`);
+    renderNav();
+  } catch (err) {
+    setStatus("error", "bpa_links.json 없음");
+    links = [];
+    renderNav();
+    console.warn("[BPA] bpa_links.json 로드 실패:", err.message);
+  }
 }
 
 /* ─────────────────────────────────────
@@ -507,7 +425,12 @@ function renderNav() {
   nav.innerHTML = "";
 
   if (!links.length) {
-    nav.innerHTML = `<div class="nav-empty">링크가 없습니다</div>`;
+    nav.innerHTML = `
+      <div class="nav-empty">
+        링크가 없습니다.<br><br>
+        root에 <code>bpa_links.json</code> 파일을<br>
+        추가하고 ? 버튼을 눌러주세요.
+      </div>`;
     return;
   }
 
@@ -552,33 +475,6 @@ function openLink(id) {
 }
 
 /* ─────────────────────────────────────
-   링크 추가
-───────────────────────────────────── */
-function toggleForm() {
-  const form = document.getElementById("addForm");
-  const open = form.classList.toggle("open");
-  if (open) {
-    document.getElementById("inputLabel").value = "";
-    document.getElementById("inputUrl").value   = "";
-    document.getElementById("inputLabel").focus();
-  }
-}
-
-function addLink() {
-  let label = document.getElementById("inputLabel").value.trim();
-  let url   = document.getElementById("inputUrl").value.trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
-  if (!label) label = url;
-
-  links.push({ id: uid(), label, url });
-  save();
-  renderNav();
-  document.getElementById("addForm").classList.remove("open");
-  showToast(`? "${label}" 추가됨`, "success");
-}
-
-/* ─────────────────────────────────────
    컨텍스트 메뉴 (우클릭)
 ───────────────────────────────────── */
 function showCtx(e, id) {
@@ -598,22 +494,6 @@ function ctxNewTab() {
   if (link) window.open(link.url, "_blank");
   closeCtx();
 }
-function ctxDelete() {
-  const link = links.find(l => l.id === ctxId);
-  links = links.filter(l => l.id !== ctxId);
-  if (activeId === ctxId) {
-    activeId = null;
-    document.getElementById("viewer").style.display = "none";
-    document.getElementById("emptyState").style.display = "";
-    document.getElementById("topTitle").textContent = "? 링크를 선택하세요 ?";
-    document.getElementById("topUrl").textContent   = "";
-    document.getElementById("btnNewTab").classList.remove("visible");
-  }
-  save();
-  renderNav();
-  closeCtx();
-  if (link) showToast(`"${link.label}" 삭제됨`);
-}
 
 /* ─────────────────────────────────────
    전역 이벤트
@@ -622,20 +502,13 @@ document.addEventListener("click", e => {
   if (!document.getElementById("ctxMenu").contains(e.target)) closeCtx();
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") {
-    closeCtx();
-    document.getElementById("addForm").classList.remove("open");
-  }
-  if (e.key === "Enter" && document.getElementById("addForm").classList.contains("open")) {
-    addLink();
-  }
+  if (e.key === "Escape") closeCtx();
 });
 
 /* ─────────────────────────────────────
-   초기화
+   초기화 ? JSON 자동 로드
 ───────────────────────────────────── */
-load();
-renderNav();
+loadLinksFromJSON();
 </script>
 </body>
 </html>
