@@ -350,7 +350,7 @@ body {
   <!-- JSON 상태 표시 -->
   <div class="json-status">
     <span class="status-dot loading" id="statusDot"></span>
-    <span id="statusText">bpa_links.json 로딩 중...</span>
+    <span id="statusText">links.json 로딩 중...</span>
     <button class="btn-reload" title="다시 불러오기" onclick="loadLinksFromJSON()">reload</button>
   </div>
 
@@ -429,9 +429,9 @@ function setStatus(state, text) {
 }
 
 async function loadLinksFromJSON() {
-  setStatus("loading", "bpa_links.json 로딩 중...");
+  setStatus("loading", "links.json 로딩 중...");
   try {
-    const res = await fetch("./bpa_links.json?t=" + Date.now());
+    const res = await fetch("./links.json?t=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
 
@@ -442,13 +442,13 @@ async function loadLinksFromJSON() {
       url:   l.url
     }));
 
-    setStatus("ok", `bpa_links.json  ·  ${links.length}개`);
+    setStatus("ok", `links.json  ·  ${links.length}개`);
     renderNav();
   } catch (err) {
-    setStatus("error", "bpa_links.json 없음");
+    setStatus("error", "links.json 없음");
     links = [];
     renderNav();
-    console.warn("[BPA] bpa_links.json 로드 실패:", err.message);
+    console.warn("[BPA] links.json 로드 실패:", err.message);
   }
 }
 
@@ -484,7 +484,7 @@ function renderNav() {
     nav.innerHTML = `
       <div class="nav-empty">
         링크가 없습니다.<br><br>
-        root에 <code>bpa_links.json</code> 파일을<br>
+        root에 <code>links.json</code> 파일을<br>
         추가하고 reload 버튼을 눌러주세요.
       </div>`;
     return;
