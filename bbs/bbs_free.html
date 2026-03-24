@@ -2,30 +2,117 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Supabase 게시판</title>
+  <title>게시판</title>
+
   <style>
-    body { font-family: Arial; max-width: 800px; margin: auto; }
-    input, textarea { width: 100%; margin: 5px 0; padding: 8px; }
-    button { padding: 8px 12px; cursor: pointer; }
-    .post { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4338ca;
+    }
+
+    .post {
+      padding: 16px;
+      border-radius: 12px;
+      background: #fafafa;
+      margin-bottom: 10px;
+    }
+
+    .post h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .post p {
+      margin: 8px 0;
+      color: #555;
+    }
+
+    .post small {
+      color: #999;
+      font-size: 12px;
+    }
+
+    .empty {
+      text-align: center;
+      color: #888;
+      padding: 30px;
+    }
   </style>
 </head>
+
 <body>
 
-<h2>?? 게시판</h2>
+<div class="container">
+  <h2>📋 게시판</h2>
 
-<input id="title" placeholder="제목">
-<textarea id="content" placeholder="내용"></textarea>
-<button id="writeBtn">등록</button>
+  <!-- 작성 -->
+  <div class="card">
+    <input id="title" placeholder="제목 입력">
+    <textarea id="content" placeholder="내용 입력"></textarea>
+    <button id="writeBtn">글 등록</button>
+  </div>
 
-<hr>
-
-<div id="posts">로딩중...</div>
+  <!-- 목록 -->
+  <div class="card">
+    <div id="posts">불러오는 중...</div>
+  </div>
+</div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-  // ?? 반드시 본인 값으로 수정
   const supabaseUrl = 'https://plhwwbjigsaypidcobrd.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsaHd3YmppZ3NheXBpZGNvYnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzE2NTIsImV4cCI6MjA4OTkwNzY1Mn0.AAtgL0e8GSisLDHb_caPM-HrcO3_3W041cq7XHo8BUA'
 
@@ -34,77 +121,71 @@
   const postsDiv = document.getElementById('posts')
   const writeBtn = document.getElementById('writeBtn')
 
-  // ?? 글 목록 조회
-  async function loadPosts() {
-    try {
-      postsDiv.innerHTML = '불러오는 중...'
-
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('id', { ascending: false })
-
-      if (error) throw error
-
-      console.log('조회 성공:', data)
-
-      if (!data || data.length === 0) {
-        postsDiv.innerHTML = '?? 데이터 없음'
-        return
-      }
-
-      postsDiv.innerHTML = ''
-
-      data.forEach(post => {
-        const div = document.createElement('div')
-        div.className = 'post'
-        div.innerHTML = `
-          <h3>${post.title ?? ''}</h3>
-          <p>${post.content ?? ''}</p>
-          <small>${post.created_at ?? ''}</small>
-        `
-        postsDiv.appendChild(div)
-      })
-
-    } catch (err) {
-      console.error('조회 실패:', err)
-      postsDiv.innerHTML = '? 오류: ' + err.message
-    }
+  function formatDate(dateStr) {
+    const d = new Date(dateStr)
+    return d.toLocaleString()
   }
 
-  // ?? 글 작성
-  async function writePost() {
-    try {
-      const title = document.getElementById('title').value.trim()
-      const content = document.getElementById('content').value.trim()
+  async function loadPosts() {
+    postsDiv.innerHTML = '불러오는 중...'
 
-      if (!title || !content) {
-        alert('제목과 내용을 입력하세요')
-        return
-      }
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('id', { ascending: false })
 
-      const { error } = await supabase
-        .from('posts')
-        .insert([{ title, content }])
-
-      if (error) throw error
-
-      alert('? 등록 완료')
-
-      document.getElementById('title').value = ''
-      document.getElementById('content').value = ''
-
-      loadPosts()
-
-    } catch (err) {
-      console.error('등록 실패:', err)
-      alert('? 등록 실패: ' + err.message)
+    if (error) {
+      postsDiv.innerHTML = '오류 발생: ' + error.message
+      return
     }
+
+    if (!data || data.length === 0) {
+      postsDiv.innerHTML = '<div class="empty">게시글이 없습니다</div>'
+      return
+    }
+
+    postsDiv.innerHTML = ''
+
+    data.forEach(post => {
+      const div = document.createElement('div')
+      div.className = 'post'
+      div.innerHTML = `
+        <h3>${post.title}</h3>
+        <p>${post.content}</p>
+        <small>${formatDate(post.created_at)}</small>
+      `
+      postsDiv.appendChild(div)
+    })
+  }
+
+  async function writePost() {
+    const title = document.getElementById('title').value.trim()
+    const content = document.getElementById('content').value.trim()
+
+    if (!title || !content) {
+      alert('제목과 내용을 입력하세요')
+      return
+    }
+
+    const { error } = await supabase
+      .from('posts')
+      .insert([{ title, content }])
+
+    if (error) {
+      alert('등록 실패: ' + error.message)
+      return
+    }
+
+    alert('등록 완료')
+
+    document.getElementById('title').value = ''
+    document.getElementById('content').value = ''
+
+    loadPosts()
   }
 
   writeBtn.addEventListener('click', writePost)
 
-  // 최초 실행
   loadPosts()
 </script>
 
