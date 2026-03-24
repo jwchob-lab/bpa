@@ -150,7 +150,7 @@ py-config, py-script { display: none !important; }
 </div>
 
 <div class="card">
-  <div class="card-title">01. CONFIGURATION</div>
+  <div class="card-title">01. INPUT API Key (models:gemini-2.5-flash)</div>
   <input type="text" id="apiKey" placeholder="Google Gemini API Key를 입력하세요">
   <div class="hint">발급처: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Google AI Studio (무료)</a></div>
 </div>
@@ -212,7 +212,7 @@ async def refine_text(event):
     run_btn.disabled = True
     status.style.display = "block"
 
-    # [수정] 모델명을 gemini-1.5-flash-latest로 변경
+    # [수정] 모델명을 models : gemini-2.5-flash 로 변경
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     
     prompt = (
