@@ -372,8 +372,81 @@ body {
   </div>
 
   <div class="empty-state" id="emptyState">
-    <div class="empty-icon">?</div>
-    <div class="empty-text">LEFT MENU → SELECT LINK</div>
+    <div class="empty-icon"></div>
+<!--    <div class="empty-text">LEFT MENU → SELECT LINK</div> -->
+<!-- 메인화면 캐릭터 시작 -->
+
+
+
+<div style="display: flex; align-items: center; justify-content: center; width: 800px; height: 800px; background-color: transparent; margin: 0 auto; overflow: hidden; position: relative;">
+
+    <div style="font-family: 'Consolas', 'Courier New', monospace; font-size: 1.6rem; color: #777; line-height: 1.2; font-weight: bold; position: absolute; pointer-events: none;">
+        <pre style="margin: 0; white-space: pre;">
+ _________________________________________________
+|                                                 |
+|                                                 |
+|                                                 |
+|                                                 |
+|                                                 |
+|                                                 |
+|                                                 |
+|_________________________________________________|
+                 |               |
+                 |_______________|
+          _______/               \_______
+         /_______________________________\
+        </pre>
+    </div>
+
+    <div style="font-family: 'Consolas', 'Courier New', monospace; font-size: 1.3rem; color: #666; position: absolute; top: 285px; left: 185px; width: 430px; overflow: hidden; white-space: nowrap;">
+        <div style="color:#555; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+            ● 업무자동화 구동중...
+        </div>
+        
+        <div style="color:#aaa; font-size: 0.9rem; margin-bottom: 15px;">// System: Task_Running</div>
+        
+        <div style="display: flex; align-items: center;">
+            <span style="color:#555; font-weight: bold; margin-right: 10px;">></span>
+            <span id="auto-task-text"></span><span class="auto-cursor">_</span>
+        </div>
+        
+        <div style="margin-top: 25px; color:#bbb; font-size: 1rem; letter-spacing: 1px;">
+            [###########################----] 85%
+        </div>
+    </div>
+
+    <style>
+        /* 커서 깜빡임 */
+        .auto-cursor {
+            color: #444;
+            font-weight: bold;
+            animation: auto-blink 0.8s step-start infinite;
+        }
+
+        @keyframes auto-blink {
+            50% { opacity: 0; }
+        }
+
+        /* 자동화 업무 프로세스 텍스트 애니메이션 */
+        #auto-task-text::after {
+            content: "Initializing...";
+            animation: autoFlow 10s infinite step-end;
+        }
+
+        @keyframes autoFlow {
+            0%   { content: "데이터 수집 시작..."; }
+            20%  { content: "엑셀 리포트 자동 생성 중"; }
+            40%  { content: "이메일 발송 리스트 확인"; }
+            60%  { content: "클라우드 동기화 진행 중"; }
+            80%  { content: "로그 파일 저장 완료"; }
+            100% { content: "대기 중: 다음 스케줄 확인"; }
+        }
+    </style>
+</div>
+
+
+
+<!-- 메인화면 캐릭터 끝 -->
   </div>
 
   <iframe id="viewer"
