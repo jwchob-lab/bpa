@@ -77,7 +77,7 @@ input[type="text"], textarea {
   outline: none; transition: border-color 0.2s;
 }
 input[type="text"]:focus, textarea:focus { border-color: var(--accent); background: #fff; }
-textarea { min-height: 250px; resize: vertical; line-height: 1.6; white-space: pre; overflow-x: auto; }
+textarea { min-height: 180px; resize: vertical; line-height: 1.6; white-space: pre; overflow-x: auto; }
 
 .hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
 
@@ -145,18 +145,27 @@ py-config, py-script { display: none !important; }
 
 <div class="header">
   <h1># BPA : Report #</h1>
-  <div class="sub">양식과 구분자를 그대로 유지하며 문구만 다듬어줍니다</div>
+  <div class="sub">AI가 지시사항을 받아서 입력한 텍스트를 보정</div>
   <div class="sub">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; AI</div>
 </div>
 
 <div class="card">
-  <div class="card-title">01. INPUT API Key (models:gemini-2.5-flash)</div>
+  <div class="card-title">01. INPUT API Key</div>
   <input type="text" id="apiKey" placeholder="Google Gemini API Key를 입력하세요">
   <div class="hint">발급처: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Google AI Studio (무료)</a></div>
 </div>
 
 <div class="card">
-  <div class="card-title">02. INPUT TEXT</div>
+  <div class="card-title">02. SYSTEM PROMPT (AI 지시사항)</div>
+  <textarea id="promptInput" style="min-height: 100px;">
+1. 기존 양식은 그대로 유지 (ex: ; - 빈칸 등)
+2. 사람 이름 뒤에는 님자를 붙이도록 지정 (ex: 홍길동 -> 홍길동님)
+3. 비지니스 보고서 문구 위주로 보정</textarea>
+  <div class="hint">AI에게 줄 추가적인 지시사항을 수정할 수 있습니다.</div>
+</div>
+
+<div class="card">
+  <div class="card-title">03. INPUT TEXT</div>
   <textarea id="textInput" placeholder="다듬고 싶은 텍스트를 입력하세요."></textarea>
   <div class="hint">글자 위치와 구분자(-, ;, :)가 결과에서도 그대로 유지됩니다.</div>
 </div>
@@ -165,13 +174,11 @@ py-config, py-script { display: none !important; }
 
 <div class="ai-loading" id="aiStatus">AI 계산중...<span class="dots"></span></div>
 
-<!-- 에러 메시지 카드 -->
 <div class="error-card" id="errorCard">
   <div class="error-title">! ERROR OCCURRED</div>
   <div class="error-msg" id="errorMsg"></div>
 </div>
 
-<!-- 결과 카드 -->
 <div class="results-card" id="resultCard">
   <div class="results-header">
     <span class="card-title" style="margin-bottom:0">REFINED RESULT</span>
@@ -188,6 +195,7 @@ from pyodide.ffi import create_proxy
 
 async def refine_text(event):
     api_key = document.getElementById("apiKey").value.strip()
+    user_prompt = document.getElementById("promptInput").value.strip()
     input_text = document.getElementById("textInput").value.strip()
     
     run_btn = document.getElementById("runBtn")
@@ -214,18 +222,22 @@ async def refine_text(event):
 
     # [수정] 모델명을 models : gemini-2.5-flash 로 변경
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
     
-    prompt = (
+    # 사용자가 입력한 프롬프트와 강제 제약 조건을 결합
+    full_prompt = (
         "Role: Professional Business Editor\n"
-        "Task: Refine the text into professional business language.\n"
-        "Constraint 1: Keep the EXACT same structure, delimiters (like -, :, ;, |), and spacing.\n"
-        "Constraint 2: Do NOT change the layout or position of lines/words.\n"
-        "Constraint 3: Only replace words/phrases with more formal business terms.\n"
-        "Constraint 4: Output ONLY the refined text. No markdown, no notes.\n\n"
+        "Task: Refine the provided text based on the instructions below.\n\n"
+        "--- Instructions ---\n"
+        f"{user_prompt}\n\n"
+        "--- Mandatory Constraints ---\n"
+        "1. Keep the EXACT same structure, delimiters, and spacing.\n"
+        "2. Do NOT change the layout or position of lines.\n"
+        "3. Output ONLY the refined text. No conversational response, no markdown code blocks.\n\n"
         f"Text to refine:\n{input_text}"
     )
 
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {"contents": [{"parts": [{"text": full_prompt}]}]}
 
     try:
         response = await pyfetch(
@@ -239,7 +251,9 @@ async def refine_text(event):
             data = await response.json()
             try:
                 refined_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                output_area.textContent = refined_text.strip()
+                # 마크다운 블록(```)이 포함되어 올 경우 제거
+                refined_text = refined_text.replace("```", "").strip()
+                output_area.textContent = refined_text
                 result_card.style.display = "block"
                 result_card.scrollIntoView({"behavior": "smooth"})
             except (KeyError, IndexError):
@@ -248,18 +262,8 @@ async def refine_text(event):
         else:
             err_json = await response.json()
             msg = err_json.get("error", {}).get("message", "Unknown Error")
-            st = err_json.get("error", {}).get("status", "Unknown Status")
-            
-            error_msg_area.textContent = (
-                f"API 오류 발생: {st}\n"
-                f"메시지: {msg}\n\n"
-                "체크리스트:\n"
-                "1. API 키가 유효한지 확인하세요.\n"
-                "2. 인터넷 연결 상태를 확인하세요.\n"
-                "3. 여전히 NOT_FOUND가 발생한다면, Google AI Studio에서 새 키를 발급받는 것을 추천합니다."
-            )
+            error_msg_area.textContent = f"API 오류 발생: {msg}"
             error_card.style.display = "block"
-            error_card.scrollIntoView({"behavior": "smooth"})
             
     except Exception as e:
         error_msg_area.textContent = f"연결 문제 발생: {str(e)}"
