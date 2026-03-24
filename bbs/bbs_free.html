@@ -1,0 +1,61 @@
+<div id="board-container">
+  <h2>📋 자유 게시판</h2>
+  
+  <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px;">
+    <input type="text" id="post-title" placeholder="제목" style="width:80%"><br><br>
+    <textarea id="post-content" placeholder="내용을 입력하세요" style="width:80%; height:100px;"></textarea><br>
+    <button onclick="savePost()">글쓰기</button>
+  </div>
+
+  <table border="1" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>번호</th>
+        <th>제목</th>
+        <th>작성일</th>
+      </tr>
+    </thead>
+    <tbody id="post-list">
+      </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+
+  // 1. 게시글 목록 가져오기
+  async function fetchPosts() {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    const listBody = document.getElementById('post-list');
+    listBody.innerHTML = data.map(post => `
+      <tr>
+        <td>${post.id}</td>
+        <td><a href="#" onclick="viewDetail(${post.id})">${post.title}</a></td>
+        <td>${new Date(post.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  // 2. 새 글 저장하기
+  async function savePost() {
+    const title = document.getElementById('post-title').value;
+    const content = document.getElementById('post-content').value;
+
+    const { error } = await supabase
+      .from('posts')
+      .insert([{ title, content }]);
+
+    if (error) alert('실패: ' + error.message);
+    else {
+      alert('등록되었습니다!');
+      location.reload(); // 간단하게 페이지 새로고침
+    }
+  }
+
+  fetchPosts();
+</script>
