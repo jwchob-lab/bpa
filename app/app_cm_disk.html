@@ -367,7 +367,7 @@ canvas#myChart {
     </div>
     <div class="field">
       <label>예측 단위</label>
-      <input type="text" id="unitLabel" placeholder="ex) 개월, 일, 주" value="개월">
+      <input type="text" id="unitLabel" placeholder="ex) 월, 일, 주" value="월">
     </div>
   </div>
 </div>
@@ -486,13 +486,12 @@ function linearRegression(values) {
 ==================================== */
 
 /**
- * 마지막 실측 레이블에서 연/월을 추출합니다.
- * 지원 형식: "2024-01", "2024/01", "2024년01월", "2024년1월", "202401" 등
- * 파싱 실패 시 null 반환.
+ * 레이블에서 연/월을 추출합니다.
+ * 파싱 실패 시 현재 날짜를 기준으로 반환하여 무조건 날짜 형식이 유지되도록 함.
  */
 function parseYearMonth(label) {
-  // YYYY-MM / YYYY/MM / YYYYMM
-  let m = label.match(/(\d{4})[-\/](\d{1,2})/);
+  // YYYY-MM / YYYY/MM / YYYY.MM
+  let m = label.match(/(\d{4})[-\/\.](\d{1,2})/);
   if (m) return { year: +m[1], month: +m[2] };
   // YYYY년M월
   m = label.match(/(\d{4})년\s*(\d{1,2})월/);
@@ -500,7 +499,10 @@ function parseYearMonth(label) {
   // 6자리 숫자 YYYYMM
   m = label.match(/^(\d{4})(\d{2})$/);
   if (m) return { year: +m[1], month: +m[2] };
-  return null;
+  
+  // 파싱 실패 시 오늘 날짜 반환 (안전장치)
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
 /**
@@ -510,7 +512,7 @@ function addMonthLabel(baseYear, baseMonth, offsetMonths) {
   const total = (baseYear * 12 + (baseMonth - 1)) + offsetMonths;
   const y = Math.floor(total / 12);
   const mo = (total % 12) + 1;
-  return `${y}년${String(mo).padStart(2, "0")}월`;
+  return `${y}년 ${String(mo).padStart(2, "0")}월`;
 }
 
 /* ====================================
@@ -524,24 +526,20 @@ function runAnalysis() {
   const threshold = parseFloat(document.getElementById("threshold").value) || 90;
   const unitLabel = document.getElementById("unitLabel").value.trim() || "개월";
 
-  // 임계치 라인 (사용자 지정, 기본 90%)
   const warnGB    = totalDisk ? totalDisk * (threshold / 100) : null;
-  // 100% 풀 용량 라인
   const fullGB    = totalDisk ? totalDisk : null;
 
   try {
     const { labels, values } = parseData(raw);
     const { slope, intercept } = linearRegression(values);
 
-    // 마지막 실측 레이블에서 연월 파싱 시도
-    const lastLabel = labels[labels.length - 1];
-    const baseDate  = parseYearMonth(lastLabel);  // null 이면 날짜 모드 불가
+    // 1. 첫 번째 데이터의 날짜를 기준으로 삼아 순차적인 레이블 생성
+    // (입력 데이터의 형식이 들쭉날쭉해도 차트에는 정돈된 날짜가 나오도록 함)
+    const firstDateObj = parseYearMonth(labels[0]);
 
-    // 실측 레이블도 "YYYY년MM월" 형식으로 통일 (파싱 성공 시)
-    const normalizedLabels = labels.map(lbl => {
-      const parsed = parseYearMonth(lbl);
-      if (!parsed) return lbl;
-      return `${parsed.year}년${String(parsed.month).padStart(2, "0")}월`;
+    // 실측 데이터 레이블을 "YYYY년 MM월"로 통일
+    const normalizedLabels = labels.map((_, idx) => {
+      return addMonthLabel(firstDateObj.year, firstDateObj.month, idx);
     });
 
     const predLabels = [...normalizedLabels];
@@ -551,18 +549,16 @@ function runAnalysis() {
     let exhaustIdxFull  = null;
     let exhaustLabelFull = null;
 
-    const maxPredict = 36;
+    // 마지막 실측 데이터의 위치
+    const lastDataIdx = values.length - 1;
+
+    const maxPredict = 60; // 최대 5년까지 예측
     for (let i = values.length; i < values.length + maxPredict; i++) {
       const predicted = +(intercept + slope * i).toFixed(2);
       predValues.push(predicted);
 
-      const offset = i - values.length + 1;
-
-      // 날짜 파싱 성공 → "YYYY년MM월", 실패 → "+N개월"
-      const predLabel = baseDate
-        ? addMonthLabel(baseDate.year, baseDate.month, offset)
-        : `+${offset}${unitLabel}`;
-
+      // 무조건 "YYYY년 MM월" 형식으로 생성
+      const predLabel = addMonthLabel(firstDateObj.year, firstDateObj.month, i);
       predLabels.push(predLabel);
 
       if (warnGB !== null && exhaustIdxWarn === null && predicted >= warnGB) {
@@ -573,8 +569,10 @@ function runAnalysis() {
         exhaustIdxFull   = i;
         exhaustLabelFull = predLabel;
       }
+      
+      // 예측 중단 조건: 풀 용량 도달 후 3개월 더 보여주거나, 너무 멀면 중단
       if (exhaustIdxFull !== null && i > exhaustIdxFull + 3) break;
-      if (exhaustIdxFull === null && exhaustIdxWarn !== null && i > exhaustIdxWarn + 5) break;
+      if (exhaustIdxFull === null && exhaustIdxWarn !== null && i > exhaustIdxWarn + 12) break;
     }
 
     lastParsed = {
@@ -662,15 +660,8 @@ function renderChart(d) {
   const trendData   = allLabels.map((_, i) => +(d.intercept + d.slope * i).toFixed(2));
   const predictData = allLabels.map((_, i) => i >= n - 1 ? +(d.intercept + d.slope * i).toFixed(2) : null);
 
-  // ── 임계치(90%) 라인
-  const warnLineData = d.warnGB !== null
-    ? allLabels.map(() => d.warnGB)
-    : null;
-
-  // ── 100% 풀 라인
-  const fullLineData = d.fullGB !== null
-    ? allLabels.map(() => d.fullGB)
-    : null;
+  const warnLineData = d.warnGB !== null ? allLabels.map(() => d.warnGB) : null;
+  const fullLineData = d.fullGB !== null ? allLabels.map(() => d.fullGB) : null;
 
   const ctx = document.getElementById("myChart").getContext("2d");
 
@@ -708,7 +699,6 @@ function renderChart(d) {
     },
   ];
 
-  // 90% 증설 필수 라인
   if (warnLineData) {
     datasets.push({
       label: `증설 필수 (${d.threshold}% / ${d.warnGB.toFixed(0)} GB)`,
@@ -723,7 +713,6 @@ function renderChart(d) {
     });
   }
 
-  // 100% 디스크 부족 라인
   if (fullLineData) {
     datasets.push({
       label: `디스크 부족 (100% / ${d.fullGB.toFixed(0)} GB)`,
@@ -747,11 +736,10 @@ function renderChart(d) {
       plugins: {
         legend: {
           labels: {
-            font: { family: "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif", size: 13, weight: "500" },
+            font: { family: "'Pretendard', sans-serif", size: 13, weight: "500" },
             color: "#2e2318",
             padding: 16,
             boxWidth: 14,
-            boxHeight: 14,
           },
         },
         tooltip: {
@@ -761,29 +749,24 @@ function renderChart(d) {
               return ` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)} GB`;
             },
           },
-          bodyFont:  { family: "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif", size: 13 },
-          titleFont: { family: "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif", size: 13, weight: "700" },
-          padding: 10,
         },
       },
       scales: {
         x: {
           ticks: {
-            font: { family: "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif", size: 12, weight: "400" },
+            font: { family: "'Pretendard', sans-serif", size: 11 },
             color: "#6b5a47",
             maxRotation: 45,
           },
-          grid: { display: false, drawBorder: false },
-          border: { display: false },
+          grid: { display: false },
         },
         y: {
           ticks: {
-            font: { family: "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif", size: 12, weight: "400" },
+            font: { family: "'Pretendard', sans-serif", size: 12 },
             color: "#6b5a47",
             callback: v => v + " GB",
           },
-          grid: { display: false, drawBorder: false },
-          border: { display: false },
+          grid: { display: false },
           beginAtZero: false,
         },
       },
@@ -797,150 +780,48 @@ function renderChart(d) {
         const yScale = scales.y;
         const totalLen = allLabels.length;
 
-        // 예측 구간 배경
         if (n < totalLen) {
           const x0 = xScale.getPixelForValue(n - 1);
-          const x1 = xScale.getPixelForValue(totalLen - 1)
-                   + (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) * 0.5;
+          const x1 = xScale.getPixelForValue(totalLen - 1) + (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) * 0.5;
           ctx.save();
           ctx.fillStyle = "rgba(124,92,58,0.04)";
           ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.bottom - chartArea.top);
           ctx.restore();
         }
 
-        // ── 위험 구간 음영: warn ~ full 사이 (오렌지)
-        if (d.warnGB !== null && d.fullGB !== null) {
-          const yWarn = yScale.getPixelForValue(d.warnGB);
-          const yFull = yScale.getPixelForValue(d.fullGB);
-          ctx.save();
-          ctx.fillStyle = "rgba(230,126,34,0.07)";
-          ctx.fillRect(chartArea.left, yFull, chartArea.right - chartArea.left, yWarn - yFull);
-          ctx.restore();
-        }
-
-        // ── 초과 구간 음영: full 이상 (빨강)
-        if (d.fullGB !== null) {
-          const yFull = yScale.getPixelForValue(d.fullGB);
-          ctx.save();
-          ctx.fillStyle = "rgba(192,57,43,0.07)";
-          ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, yFull - chartArea.top);
-          ctx.restore();
-        }
-
-        // ── warn 도달 수직선 + 말풍선
         if (d.exhaustIdxWarn !== null) {
           const xi = xScale.getPixelForValue(d.exhaustIdxWarn);
           ctx.save();
           ctx.strokeStyle = "#e67e22";
           ctx.lineWidth   = 1.5;
           ctx.setLineDash([5, 4]);
-          ctx.beginPath();
-          ctx.moveTo(xi, chartArea.top);
-          ctx.lineTo(xi, chartArea.bottom);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(xi, chartArea.top); ctx.lineTo(xi, chartArea.bottom); ctx.stroke();
           ctx.setLineDash([]);
 
           const label1 = "증설 필수";
           const label2 = d.exhaustLabelWarn;
-          ctx.font = "bold 12px 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";
-          const tw1 = ctx.measureText(label1).width;
-          const tw2 = ctx.measureText(label2).width;
-          const bw = Math.max(tw1, tw2) + 20;
-          const bh = 38;
-          const tailH = 10;
-          const tailW = 10;
-
-          // 말풍선 위치: 수직선 위 중앙, 차트 영역 안에서 클리핑
-          let bx = xi - bw / 2;
-          bx = Math.max(chartArea.left + 2, Math.min(bx, chartArea.right - bw - 2));
-          const by = chartArea.top + 6;
-          const cx = bx + bw / 2;
-
-          // 몸통
-          ctx.fillStyle = "#1a1a1a";
-          ctx.strokeStyle = "#e67e22";
-          ctx.lineWidth = 2;
-          roundRect(ctx, bx, by, bw, bh, 6);
-          ctx.fill();
-          ctx.stroke();
-
-          // 꼬리 (아래 중앙 → 수직선 위쪽)
-          ctx.beginPath();
-          ctx.moveTo(cx - tailW / 2, by + bh);
-          ctx.lineTo(cx, by + bh + tailH);
-          ctx.lineTo(cx + tailW / 2, by + bh);
-          ctx.fillStyle = "#1a1a1a";
-          ctx.fill();
-          ctx.strokeStyle = "#e67e22";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          ctx.fillStyle = "#ffffff";
-          ctx.textAlign = "center";
-          ctx.fillText(label1, cx, by + 15);
-          ctx.fillStyle = "#e67e22";
-          ctx.fillText(label2, cx, by + 29);
+          drawBubble(ctx, xi, chartArea.top + 6, label1, label2, "#e67e22", chartArea);
           ctx.restore();
         }
 
-        // ── full 도달 수직선 + 말풍선
         if (d.exhaustIdxFull !== null) {
           const xi = xScale.getPixelForValue(d.exhaustIdxFull);
           ctx.save();
           ctx.strokeStyle = "#c0392b";
           ctx.lineWidth   = 1.5;
           ctx.setLineDash([5, 4]);
-          ctx.beginPath();
-          ctx.moveTo(xi, chartArea.top);
-          ctx.lineTo(xi, chartArea.bottom);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(xi, chartArea.top); ctx.lineTo(xi, chartArea.bottom); ctx.stroke();
           ctx.setLineDash([]);
 
           const label1 = "디스크 부족";
           const label2 = d.exhaustLabelFull;
-          ctx.font = "bold 12px 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";
-          const tw1 = ctx.measureText(label1).width;
-          const tw2 = ctx.measureText(label2).width;
-          const bw = Math.max(tw1, tw2) + 20;
-          const bh = 38;
-          const tailH = 10;
-          const tailW = 10;
-
-          // warn 말풍선과 같은 x면 아래로 오프셋
-          const warnBh = 38 + 10; // bh + tailH
-          const sameX = d.exhaustIdxWarn !== null &&
-            Math.abs(xScale.getPixelForValue(d.exhaustIdxFull) - xScale.getPixelForValue(d.exhaustIdxWarn)) < bw;
-          const byOffset = sameX ? chartArea.top + 6 + warnBh + 8 : chartArea.top + 6;
-
-          let bx = xi - bw / 2;
-          bx = Math.max(chartArea.left + 2, Math.min(bx, chartArea.right - bw - 2));
-          const by = byOffset;
-          const cx = bx + bw / 2;
-
-          // 몸통
-          ctx.fillStyle = "#1a1a1a";
-          ctx.strokeStyle = "#c0392b";
-          ctx.lineWidth = 2;
-          roundRect(ctx, bx, by, bw, bh, 6);
-          ctx.fill();
-          ctx.stroke();
-
-          // 꼬리
-          ctx.beginPath();
-          ctx.moveTo(cx - tailW / 2, by + bh);
-          ctx.lineTo(cx, by + bh + tailH);
-          ctx.lineTo(cx + tailW / 2, by + bh);
-          ctx.fillStyle = "#1a1a1a";
-          ctx.fill();
-          ctx.strokeStyle = "#c0392b";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          ctx.fillStyle = "#ffffff";
-          ctx.textAlign = "center";
-          ctx.fillText(label1, cx, by + 15);
-          ctx.fillStyle = "#ff6b6b";
-          ctx.fillText(label2, cx, by + 29);
+          
+          // warn과 겹치면 아래에 그리기
+          let yOffset = chartArea.top + 6;
+          if (d.exhaustIdxWarn !== null && Math.abs(d.exhaustIdxFull - d.exhaustIdxWarn) < 3) {
+             yOffset += 50;
+          }
+          drawBubble(ctx, xi, yOffset, label1, label2, "#c0392b", chartArea);
           ctx.restore();
         }
       },
@@ -948,7 +829,26 @@ function renderChart(d) {
   });
 }
 
-/* ── 둥근 모서리 사각형 헬퍼 ── */
+function drawBubble(ctx, x, y, l1, l2, color, area) {
+  ctx.font = "bold 11px 'Pretendard'";
+  const tw = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 16;
+  const th = 34;
+  let bx = x - tw/2;
+  bx = Math.max(area.left+2, Math.min(bx, area.right-tw-2));
+
+  ctx.fillStyle = "#1a1a1a";
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  roundRect(ctx, bx, y, tw, th, 6);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText(l1, bx + tw/2, y + 14);
+  ctx.fillStyle = color;
+  ctx.fillText(l2, bx + tw/2, y + 28);
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -963,9 +863,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-/* ====================================
-   PNG 다운로드
-==================================== */
 function downloadPNG() {
   if (!chartInstance) return;
   const canvas = document.getElementById("myChart");
@@ -982,22 +879,17 @@ function downloadPNG() {
   a.click();
 }
 
-/* ====================================
-   CSV 다운로드
-==================================== */
 function downloadCSV() {
   if (!lastParsed) return;
   const d = lastParsed;
   const rows = [["기간", "실제사용량(GB)", "추세선(GB)", "구분"]];
   const n = d.values.length;
-
   d.predLabels.forEach((lbl, i) => {
     const actual  = i < n ? d.values[i].toFixed(1) : "";
     const trend   = (d.intercept + d.slope * i).toFixed(1);
     const type    = i < n ? "실측" : "예측";
     rows.push([lbl, actual, trend, type]);
   });
-
   const csv  = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url  = URL.createObjectURL(blob);
@@ -1006,12 +898,9 @@ function downloadCSV() {
   a.click(); URL.revokeObjectURL(url);
 }
 
-/* ====================================
-   에러 표시
-==================================== */
 function showError(msg) {
   const el = document.getElementById("errorMsg");
-  el.textContent = "? " + msg;
+  el.textContent = "?? " + msg;
   el.style.display = "block";
 }
 function hideError() {
