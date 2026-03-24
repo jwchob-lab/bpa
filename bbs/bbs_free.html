@@ -23,10 +23,10 @@
 <hr>
 
 <!-- 글 목록 -->
-<div id="posts"></div>
+<div id="posts">로딩중...</div>
 
 <script>
-  // ?? 여기에 본인 값 넣기
+  // ?? 본인 값으로 변경
   const supabaseUrl = 'https://plhwwbjigsaypidcobrd.supabase.co'
   const supabaseKey = 'sb_publishable_yffSFbC1kkBw8vKMSXQzeA_qWoG3YIp'
 
@@ -34,21 +34,36 @@
 
   // ?? 글 목록 조회
   async function loadPosts() {
+    const postsDiv = document.getElementById('posts')
+    postsDiv.innerHTML = '불러오는 중...'
+
     const { data, error } = await supabase
       .from('posts')
       .select('*')
       .order('id', { ascending: false })
 
-    const postsDiv = document.getElementById('posts')
+    if (error) {
+      console.error('조회 에러:', error)
+      postsDiv.innerHTML = '? 조회 실패: ' + error.message
+      return
+    }
+
+    console.log('조회 데이터:', data)
+
+    if (!data || data.length === 0) {
+      postsDiv.innerHTML = '?? 데이터 없음'
+      return
+    }
+
     postsDiv.innerHTML = ''
 
     data.forEach(post => {
       const div = document.createElement('div')
       div.className = 'post'
       div.innerHTML = `
-        <h3>${post.title}</h3>
-        <p>${post.content}</p>
-        <small>${post.created_at}</small>
+        <h3>${post.title ?? ''}</h3>
+        <p>${post.content ?? ''}</p>
+        <small>${post.created_at ?? ''}</small>
       `
       postsDiv.appendChild(div)
     })
@@ -56,15 +71,25 @@
 
   // ?? 글 작성
   async function writePost() {
-    const title = document.getElementById('title').value
-    const content = document.getElementById('content').value
+    const title = document.getElementById('title').value.trim()
+    const content = document.getElementById('content').value.trim()
 
     if (!title || !content) {
-      alert('제목/내용 입력하세요')
+      alert('제목과 내용을 입력하세요')
       return
     }
 
-    await supabase.from('posts').insert([{ title, content }])
+    const { error } = await supabase
+      .from('posts')
+      .insert([{ title, content }])
+
+    if (error) {
+      console.error('등록 에러:', error)
+      alert('? 등록 실패: ' + error.message)
+      return
+    }
+
+    alert('? 등록 완료')
 
     document.getElementById('title').value = ''
     document.getElementById('content').value = ''
