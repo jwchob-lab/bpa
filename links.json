@@ -2,6 +2,7 @@
   "links": [
     { "label": "공통: 트리거",  "url": "./app/app_cm_trigger.html" },
     { "label": "공통: 디스크",  "url": "./app/app_cm_disk.html" },
+    { "label": "공통: 보고서",  "url": "./app/app_cm_report.html" },
     { "label": "오라클: 권한백업",  "url": "./app/app_oracle_grt.html" },
     { "label": "오라클: XPLAN", "url": "./app/app_oracle_xplan.html" }
   ]
