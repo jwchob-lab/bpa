@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>업무자동화 : 권한문 생성</title>
+<title>BPA : Oracle Grant</title>
 
 <!-- PyScript -->
 <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
@@ -275,8 +275,8 @@ py-config, py-script { display: none !important; }
 
 <!-- 헤더 -->
 <div class="header">
-  <h1># 업무자동화 : 권한문 생성 #</h1>
-  <div class="sub">테이블명을 입력하면 권한 확인 및 권한문 생성 SQL을 자동으로 만들어줍니다</div>
+  <h1># BPA : Oracle Grant #</h1>
+  <div class="sub">테이블명을 입력하면 권한 확인 및 Oracle Grant SQL을 자동으로 만들어줍니다</div>
   <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; PyScript</div>
 </div>
 
@@ -317,7 +317,7 @@ py-config, py-script { display: none !important; }
   <!-- 쿼리 2 -->
   <div class="sql-block">
     <div class="sql-block-label">
-      <span>2. 권한문 생성</span>
+      <span>2. Oracle Grant</span>
       <button class="btn-copy" id="copyBtn2" onclick="copySQL(2)">복사</button>
     </div>
     <div class="sql-pre" id="sqlOutput2"></div>
@@ -375,7 +375,7 @@ def build_query1(tables: list) -> str:
 def build_query2(tables: list) -> str:
     in_list = build_in_list(tables)
     return (
-        "--2. 권한문 생성\n"
+        "--2. Oracle Grant\n"
         "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' FROM DBA_TAB_PRIVS\n"
         "WHERE UPPER(TABLE_NAME) IN (\n"
         f"{in_list}\n"
