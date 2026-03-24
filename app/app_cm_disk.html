@@ -403,11 +403,11 @@ canvas#myChart {
   <div class="legend-guide">
     <div class="legend-item">
       <div class="legend-line warn-line"></div>
-      <span class="legend-label-warn">? 증설 필수 (90%)</span>
+      <span class="legend-label-warn">증설 필수 (90%)</span>
     </div>
     <div class="legend-item">
       <div class="legend-line danger-line"></div>
-      <span class="legend-label-danger">?? 디스크 부족 (100%)</span>
+      <span class="legend-label-danger">디스크 부족 (100%)</span>
     </div>
   </div>
 
@@ -627,7 +627,7 @@ function renderSummary(d) {
 
   if (d.warnGB !== null) {
     badges.push({
-      label: `? 증설 필수 (${d.threshold}%)`,
+      label: `증설 필수 (${d.threshold}%)`,
       value: d.exhaustLabelWarn ? d.exhaustLabelWarn : "예측 범위 초과",
       cls: d.exhaustLabelWarn ? "warn" : "ok",
     });
@@ -635,7 +635,7 @@ function renderSummary(d) {
 
   if (d.fullGB !== null) {
     badges.push({
-      label: `?? 디스크 부족 (100%)`,
+      label: `디스크 부족 (100%)`,
       value: d.exhaustLabelFull ? d.exhaustLabelFull : "예측 범위 초과",
       cls: d.exhaustLabelFull ? "danger" : "ok",
     });
@@ -711,7 +711,7 @@ function renderChart(d) {
   // 90% 증설 필수 라인
   if (warnLineData) {
     datasets.push({
-      label: `? 증설 필수 (${d.threshold}% / ${d.warnGB.toFixed(0)} GB)`,
+      label: `증설 필수 (${d.threshold}% / ${d.warnGB.toFixed(0)} GB)`,
       data: warnLineData,
       type: "line",
       borderColor:     "rgba(230,126,34,0.95)",
@@ -726,7 +726,7 @@ function renderChart(d) {
   // 100% 디스크 부족 라인
   if (fullLineData) {
     datasets.push({
-      label: `?? 디스크 부족 (100% / ${d.fullGB.toFixed(0)} GB)`,
+      label: `디스크 부족 (100% / ${d.fullGB.toFixed(0)} GB)`,
       data: fullLineData,
       type: "line",
       borderColor:     "rgba(192,57,43,0.95)",
