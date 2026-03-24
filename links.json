@@ -6,6 +6,7 @@
     { "label": "공통: 보고서 (ai)",  "url": "./app/app_cm_report.html" },
     { "label": "공통: SQL튜닝 (ai)", "url": "./app/app_cm_sql_ai.html" },
     { "label": "오라클: XPLAN", "url": "./app/app_oracle_xplan.html" },
-    { "label": "오라클: 권한백업",  "url": "./app/app_oracle_grt.html" }
+    { "label": "오라클: 권한백업",  "url": "./app/app_oracle_grt.html" },
+    { "label": "게시판: free",  "url": "./bbs/bbs_free.html" }
   ]
 }
