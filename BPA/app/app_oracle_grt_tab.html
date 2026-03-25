@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPA : Oracle Grant</title>
+
+<!-- PyScript -->
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:       #f2ece3;
+  --surface:  #ffffff;
+  --border:   #e0d8cc;
+  --accent:   #7c5c3a;
+  --text:     #2e2318;
+  --muted:    #a0907e;
+  --found:    #3a7c5c;
+  --notfound: #c0392b;
+  --radius:   12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 16px 80px;
+}
+
+/* ── 로딩 오버레이 ── */
+#py-loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s;
+}
+#py-loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--accent); margin-bottom: 28px;
+}
+.loading-bar-wrap {
+  width: 240px; height: 3px;
+  background: var(--border); border-radius: 99px; overflow: hidden;
+}
+.loading-bar {
+  height: 100%; width: 0%;
+  background: var(--accent); border-radius: 99px;
+  animation: loadProg 2.2s ease forwards;
+}
+@keyframes loadProg { to { width: 92%; } }
+.loading-msg {
+  margin-top: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── 헤더 ── */
+.header {
+  text-align: center; margin-bottom: 40px;
+  animation: fadeUp 0.6s ease both;
+}
+.header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem; font-weight: 600; color: var(--accent);
+}
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+.header .ver {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; margin-top: 10px;
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  width: 100%; max-width: 860px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.08s; }
+.card:nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* ── 드롭존 ── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px; padding: 26px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(124,92,58,0.04);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-text { font-size: 0.92rem; color: var(--muted); }
+.drop-text span { color: var(--accent); font-weight: 700; }
+.drop-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.file-loaded {
+  display: none; margin-top: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem; color: var(--found);
+  animation: fadeUp 0.25s ease both;
+}
+
+/* ── textarea ── */
+textarea {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; resize: vertical; min-height: 120px;
+  line-height: 1.7; transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: var(--muted); }
+
+/* ── 태그 ── */
+.kw-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+}
+.kw-tag {
+  background: rgba(124,92,58,0.10);
+  border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 20px;
+  padding: 3px 11px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.77rem;
+  animation: tagIn 0.15s ease both;
+}
+@keyframes tagIn {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.hint { font-size: 0.77rem; color: var(--muted); margin-top: 10px; }
+
+/* ── 실행 버튼 ── */
+.btn-search {
+  width: 100%; max-width: 860px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 14px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.24s ease both;
+}
+.btn-search:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.btn-search:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── 결과 카드 ── */
+.results-card {
+  display: none; width: 100%; max-width: 860px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+  margin-bottom: 18px;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.results-header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase;
+}
+.results-summary {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted);
+}
+.s-num { color: var(--accent); font-weight: 600; }
+
+/* ── SQL 출력 블록 ── */
+.sql-block {
+  margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.sql-block:last-of-type { border-bottom: none; }
+
+.sql-block-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.sql-pre {
+  background: #faf7f3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre;
+  overflow-x: auto;
+  position: relative;
+}
+
+/* SQL 하이라이트 */
+.sql-kw   { color: #7c5c3a; font-weight: 600; }
+.sql-str  { color: #3a7c5c; }
+.sql-com  { color: #a0907e; font-style: italic; }
+.sql-fn   { color: #5c3a7c; }
+
+/* ── 복사 버튼 ── */
+.btn-copy {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--accent);
+  cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.btn-copy:hover { border-color: var(--accent); }
+.btn-copy.copied { color: var(--found); border-color: var(--found); }
+
+/* ── CSV 다운로드 버튼 ── */
+.btn-csv {
+  display: block; margin: 14px 20px 16px auto;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent);
+  cursor: pointer; transition: border-color 0.2s;
+  width: fit-content;
+}
+.btn-csv:hover { border-color: var(--accent); }
+
+/* ── PyScript 기본 스타일 숨기기 ── */
+py-config, py-script { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 로딩 오버레이 -->
+<div id="py-loading">
+  <div class="loading-logo"># BPA : SQL GEN #</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-msg">Python 런타임 초기화 중...</div>
+</div>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1># BPA : Oracle Grant #</h1>
+  <div class="sub">테이블명을 입력하면 권한 확인 및 Oracle Grant SQL을 자동으로 만들어줍니다</div>
+  <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; PyScript</div>
+</div>
+
+<!-- 01. 테이블 목록 입력 -->
+<div class="card">
+  <div class="card-title">01. 테이블 목록</div>
+  <div class="drop-zone" id="kwDropZone">
+    <input type="file" id="kwFileInput" multiple>
+    <div class="drop-text"><span>클릭</span> 또는 파일을 여기에 드래그하세요</div>
+    <div class="drop-sub">텍스트 파일 업로드 시 내용이 자동으로 채워집니다</div>
+  </div>
+  <div class="file-loaded" id="kwFileLoaded"></div>
+  <textarea id="tableInput" style="margin-top:16px;"
+    placeholder="ex)&#10;테이블명1&#10;테이블명2&#10;--쉼표 또는 줄바꿈으로 구분"></textarea>
+  <div class="kw-tags" id="kwTags"></div>
+  <div class="hint">쉼표 또는 줄바꿈으로 구분 &nbsp;·&nbsp; 자동으로 대문자 변환됩니다</div>
+</div>
+
+<!-- 실행 버튼 -->
+<button class="btn-search" id="generateBtn" disabled>쿼리 생성</button>
+
+<!-- 결과 -->
+<div class="results-card" id="resultsCard">
+  <div class="results-header">
+    <span class="results-header-title">생성된 쿼리</span>
+    <div class="results-summary" id="resultsSummary"></div>
+  </div>
+
+  <!-- 쿼리 1 -->
+  <div class="sql-block">
+    <div class="sql-block-label">
+      <span>1. 테이블 권한 확인</span>
+      <button class="btn-copy" id="copyBtn1" onclick="copySQL(1)">복사</button>
+    </div>
+    <div class="sql-pre" id="sqlOutput1"></div>
+  </div>
+
+  <!-- 쿼리 2 -->
+  <div class="sql-block">
+    <div class="sql-block-label">
+      <span>2. Oracle Grant</span>
+      <button class="btn-copy" id="copyBtn2" onclick="copySQL(2)">복사</button>
+    </div>
+    <div class="sql-pre" id="sqlOutput2"></div>
+  </div>
+
+</div>
+
+<!-- PyScript 설정 -->
+<py-config>
+packages = ["chardet"]
+</py-config>
+
+<script type="py">
+import re
+import chardet
+from js import document, window, console
+from pyodide.ffi import create_proxy
+
+# ── 인코딩 감지 및 디코딩 ─────────────────────────────────────────────────
+def decode_bytes(raw: bytes) -> str:
+    detected = chardet.detect(raw)
+    enc = detected.get("encoding") or "utf-8"
+    try:
+        return raw.decode(enc)
+    except Exception:
+        return raw.decode("utf-8", errors="replace")
+
+# ── 테이블명 파싱 (쉼표/줄바꿈 구분, 대문자 변환) ─────────────────────────
+def parse_tables(raw: str) -> list:
+    tokens = re.split(r"[,\n]", raw)
+    seen, result = set(), []
+    for t in tokens:
+        t = t.strip().upper()
+        if t and t not in seen:
+            seen.add(t)
+            result.append(t)
+    return result
+
+# ── SQL 생성 ──────────────────────────────────────────────────────────────
+def build_in_list(tables: list) -> str:
+    lines = [f"'{tables[0]}'"]
+    for t in tables[1:]:
+        lines.append(f",'{t}'")
+    return "\n".join(lines)
+
+def build_query1(tables: list) -> str:
+    in_list = build_in_list(tables)
+    return (
+        "--1. 테이블 권한 확인\n"
+        "SELECT * FROM DBA_TAB_PRIVS WHERE TABLE_NAME IN (\n"
+        f"{in_list}\n"
+        ") ORDER BY GRANTABLE DESC, OWNER, TABLE_NAME\n;"
+    )
+
+def build_query2(tables: list) -> str:
+    in_list = build_in_list(tables)
+    return (
+        "--2. Oracle Grant\n"
+        "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' FROM DBA_TAB_PRIVS\n"
+        "WHERE UPPER(TABLE_NAME) IN (\n"
+        f"{in_list}\n"
+        ")\n"
+        "ORDER BY TABLE_NAME\n;"
+    )
+
+# ── 버튼 활성화 체크 ─────────────────────────────────────────────────────
+def check_ready():
+    raw = document.getElementById("tableInput").value
+    has_tables = len(parse_tables(raw)) > 0
+    document.getElementById("generateBtn").disabled = not has_tables
+
+# ── 태그 미리보기 ─────────────────────────────────────────────────────────
+def update_tags(raw: str):
+    tables = parse_tables(raw)
+    container = document.getElementById("kwTags")
+    container.innerHTML = "".join(
+        f'<span class="kw-tag">{t}</span>' for t in tables
+    )
+
+# ── SQL 하이라이트 (간단) ─────────────────────────────────────────────────
+def highlight_sql(sql: str) -> str:
+    keywords = [
+        "SELECT", "FROM", "WHERE", "ORDER", "BY", "DESC", "ASC",
+        "IN", "AND", "OR", "ON", "UPPER", "GRANT", "TO"
+    ]
+    result = ""
+    i = 0
+    while i < len(sql):
+        # 주석
+        if sql[i:i+2] == "--":
+            end = sql.find("\n", i)
+            if end == -1:
+                end = len(sql)
+            else:
+                end += 1
+            result += f'<span class="sql-com">{sql[i:end]}</span>'
+            i = end
+            continue
+        # 문자열
+        if sql[i] == "'":
+            end = sql.find("'", i+1)
+            if end == -1:
+                end = len(sql)
+            else:
+                end += 1
+            result += f'<span class="sql-str">{sql[i:end]}</span>'
+            i = end
+            continue
+        # 키워드 체크
+        matched = False
+        for kw in keywords:
+            if sql[i:i+len(kw)].upper() == kw:
+                after = sql[i+len(kw):i+len(kw)+1]
+                if not after or not (after.isalnum() or after == "_"):
+                    result += f'<span class="sql-kw">{sql[i:i+len(kw)]}</span>'
+                    i += len(kw)
+                    matched = True
+                    break
+        if not matched:
+            c = sql[i]
+            if c in "<>&\"":
+                escape_map = {"<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;"}
+                result += escape_map[c]
+            else:
+                result += c
+            i += 1
+    return result
+
+# ── 결과 렌더링 ───────────────────────────────────────────────────────────
+def render_results(tables: list):
+    q1 = build_query1(tables)
+    q2 = build_query2(tables)
+
+    # 요약
+    document.getElementById("resultsSummary").innerHTML = (
+        f'테이블 <span class="s-num">{len(tables)}</span>개'
+    )
+
+    # 쿼리 출력 (하이라이트)
+    document.getElementById("sqlOutput1").innerHTML = highlight_sql(q1)
+    document.getElementById("sqlOutput2").innerHTML = highlight_sql(q2)
+
+    # 원본 텍스트 data attribute에 저장 (복사/다운로드용)
+    document.getElementById("sqlOutput1").setAttribute("data-raw", q1)
+    document.getElementById("sqlOutput2").setAttribute("data-raw", q2)
+
+    card = document.getElementById("resultsCard")
+    card.style.display = "block"
+    card.scrollIntoView({"behavior": "smooth", "block": "start"})
+
+# ── 파일 로드 ─────────────────────────────────────────────────────────────
+async def load_kw_files(js_files):
+    ta = document.getElementById("tableInput")
+    lines, loaded = [], []
+    for i in range(js_files.length):
+        f = js_files.item(i)
+        buf = await f.arrayBuffer()
+        raw = bytes(window.Uint8Array.new(buf))
+        txt = decode_bytes(raw).strip()
+        lines.append(txt)
+        loaded.append(f.name)
+    ta.value = "\n".join(lines)
+    label = loaded[0] if len(loaded) == 1 else f"{len(loaded)}개 파일: {', '.join(loaded)}"
+    el = document.getElementById("kwFileLoaded")
+    el.textContent = f"? {label}"
+    el.style.display = "block"
+    update_tags(ta.value)
+    check_ready()
+
+async def on_kw_file_change(event):
+    files = event.target.files
+    if files.length > 0:
+        await load_kw_files(files)
+
+async def on_kw_drop(event):
+    event.preventDefault()
+    document.getElementById("kwDropZone").classList.remove("dragover")
+    files = event.dataTransfer.files
+    if files.length > 0:
+        await load_kw_files(files)
+
+def on_kw_dragover(event):
+    event.preventDefault()
+    document.getElementById("kwDropZone").classList.add("dragover")
+
+def on_kw_dragleave(event):
+    document.getElementById("kwDropZone").classList.remove("dragover")
+
+# ── textarea 입력 핸들러 ──────────────────────────────────────────────────
+def on_table_input(event):
+    update_tags(event.target.value)
+    check_ready()
+
+# ── 생성 버튼 클릭 ────────────────────────────────────────────────────────
+def on_generate_click(event):
+    raw = document.getElementById("tableInput").value
+    tables = parse_tables(raw)
+    if not tables:
+        return
+    render_results(tables)
+
+# ── 이벤트 바인딩 ─────────────────────────────────────────────────────────
+document.getElementById("kwFileInput").addEventListener(
+    "change", create_proxy(on_kw_file_change))
+
+kd = document.getElementById("kwDropZone")
+kd.addEventListener("dragover",  create_proxy(on_kw_dragover))
+kd.addEventListener("dragleave", create_proxy(on_kw_dragleave))
+kd.addEventListener("drop",      create_proxy(on_kw_drop))
+
+document.getElementById("tableInput").addEventListener(
+    "input", create_proxy(on_table_input))
+
+document.getElementById("generateBtn").addEventListener(
+    "click", create_proxy(on_generate_click))
+
+# ── 로딩 오버레이 제거 ────────────────────────────────────────────────────
+loading = document.getElementById("py-loading")
+loading.classList.add("hidden")
+window.setTimeout(create_proxy(lambda: loading.remove()), 450)
+</script>
+
+<!-- 복사 / 다운로드 (JS) -->
+<script>
+function copySQL(num) {
+  const el = document.getElementById("sqlOutput" + num);
+  const raw = el.getAttribute("data-raw") || el.innerText;
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.getElementById("copyBtn" + num);
+    btn.textContent = "? 복사됨";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "복사";
+      btn.classList.remove("copied");
+    }, 1800);
+  });
+}
+
+function downloadTxt() {
+  const q1 = document.getElementById("sqlOutput1").getAttribute("data-raw") || "";
+  const q2 = document.getElementById("sqlOutput2").getAttribute("data-raw") || "";
+  const content = q1 + "\n\n" + q2;
+  const bom  = "\uFEFF";
+  const blob = new Blob([bom + content], { type: "text/plain;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = "bpa_sql_query.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>

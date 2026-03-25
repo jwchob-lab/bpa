@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPA : Report</title>
+
+<!-- PyScript -->
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:       #f2ece3;
+  --surface:  #ffffff;
+  --border:   #e0d8cc;
+  --accent:   #7c5c3a;
+  --text:     #2e2318;
+  --muted:    #a0907e;
+  --found:    #3a7c5c;
+  --notfound: #c0392b;
+  --radius:   12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 52px 16px 80px;
+}
+
+/* ── 로딩 오버레이 ── */
+#py-loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.4s;
+}
+#py-loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo { font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 600; color: var(--accent); margin-bottom: 28px; }
+.loading-bar-wrap { width: 240px; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.loading-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; animation: loadProg 2.2s ease forwards; }
+@keyframes loadProg { to { width: 92%; } }
+
+/* ── 헤더 ── */
+.header { text-align: center; margin-bottom: 40px; animation: fadeUp 0.6s ease both; }
+.header h1 { font-family: 'IBM Plex Mono', monospace; font-size: 1.75rem; font-weight: 600; color: var(--accent); }
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+
+/* ── 카드 공통 ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 26px 28px; width: 100%; max-width: 860px; margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 16px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 입력 폼 ── */
+input[type="text"], textarea {
+  width: 100%; background: #fafafa; border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; transition: border-color 0.2s;
+}
+input[type="text"]:focus, textarea:focus { border-color: var(--accent); background: #fff; }
+textarea { min-height: 180px; resize: vertical; line-height: 1.6; white-space: pre; overflow-x: auto; }
+
+.hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+
+/* ── 실행 버튼 ── */
+.btn-main {
+  width: 100%; max-width: 860px; background: var(--accent); color: #fff;
+  border: none; border-radius: 10px; padding: 16px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 20px; animation: fadeUp 0.6s 0.2s ease both;
+}
+.btn-main:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,92,58,0.2); }
+.btn-main:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 결과 출력 ── */
+.results-card {
+  display: none; width: 100%; max-width: 860px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  animation: fadeUp 0.4s ease both; margin-bottom: 40px;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.output-content {
+  padding: 24px; font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; 
+  line-height: 1.6; color: var(--text);
+  white-space: pre; overflow-x: auto; word-break: break-all;
+  background-color: #faf7f3;
+}
+
+.btn-copy {
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+  color: var(--accent); cursor: pointer;
+}
+
+/* ── 에러 카드 ── */
+.error-card {
+  display: none; width: 100%; max-width: 860px;
+  background: #fff5f5; border: 1px solid #feb2b2; border-radius: var(--radius);
+  padding: 20px 24px; margin-bottom: 40px; animation: fadeUp 0.4s ease both;
+}
+.error-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--notfound);
+  letter-spacing: 2px; font-weight: 700; margin-bottom: 10px;
+}
+.error-msg {
+  font-size: 0.85rem; color: #742a2a; line-height: 1.5; white-space: pre-wrap;
+}
+
+/* AI 로딩 애니메이션 */
+.ai-loading { display: none; text-align: center; padding: 20px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+.dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
+@keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
+
+py-config, py-script { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="py-loading">
+  <div class="loading-logo"># AI : FORMAT PRESERVER #</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<div class="header">
+  <h1># BPA : Report #</h1>
+  <div class="sub">AI가 지시사항을 받아서 입력한 텍스트를 보정</div>
+  <div class="sub">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; AI</div>
+</div>
+
+<div class="card">
+  <div class="card-title">01. INPUT API Key</div>
+  <input type="text" id="apiKey" placeholder="Google Gemini API Key를 입력하세요">
+  <div class="hint">발급처: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Google AI Studio (무료)</a></div>
+</div>
+
+<div class="card">
+  <div class="card-title">02. SYSTEM PROMPT (AI 지시사항)</div>
+  <textarea id="promptInput" style="min-height: 100px;">
+1. 기존 양식은 그대로 유지 (ex: ; - 빈칸 등)
+2. 사람 이름 뒤에는 님자를 붙이도록 지정 (ex: 홍길동 -> 홍길동님)
+3. 비지니스 보고서 문구 위주로 보정
+4. 대분류는 가장 앞에 -를 배치하고 처음 단어에 () 로 감싸줘
+5. 중분류는 앞에 공백 한칸 배치하고 · 지정
+6. 하분류는 앞에 공백 두칸 배치하고 ; 지정
+7. 위 사항을 기반으로 입력받은 텍스트를 상황게 맞게 잘 정리해줘
+</textarea>
+  <div class="hint">AI에게 줄 추가적인 지시사항을 수정할 수 있습니다.</div>
+</div>
+
+<div class="card">
+  <div class="card-title">03. INPUT TEXT</div>
+  <textarea id="textInput" placeholder="다듬고 싶은 텍스트를 입력하세요."></textarea>
+  <div class="hint">원하는 규칙을 추가할수 있습니다.</div>
+</div>
+
+<button class="btn-main" id="runBtn">변환 시작</button>
+
+<div class="ai-loading" id="aiStatus">AI 계산중...<span class="dots"></span></div>
+
+<div class="error-card" id="errorCard">
+  <div class="error-title">! ERROR OCCURRED</div>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<div class="results-card" id="resultCard">
+  <div class="results-header">
+    <span class="card-title" style="margin-bottom:0">REFINED RESULT</span>
+    <button class="btn-copy" id="copyBtn">복사하기</button>
+  </div>
+  <pre class="output-content" id="outputArea"></pre>
+</div>
+
+<py-script>
+import json
+from js import document, window, console
+from pyodide.http import pyfetch
+from pyodide.ffi import create_proxy
+
+async def refine_text(event):
+    api_key = document.getElementById("apiKey").value.strip()
+    user_prompt = document.getElementById("promptInput").value.strip()
+    input_text = document.getElementById("textInput").value.strip()
+    
+    run_btn = document.getElementById("runBtn")
+    status = document.getElementById("aiStatus")
+    result_card = document.getElementById("resultCard")
+    error_card = document.getElementById("errorCard")
+    error_msg_area = document.getElementById("errorMsg")
+    output_area = document.getElementById("outputArea")
+
+    result_card.style.display = "none"
+    error_card.style.display = "none"
+    
+    if not api_key:
+        error_msg_area.textContent = "API Key가 입력되지 않았습니다."
+        error_card.style.display = "block"
+        return
+    if not input_text:
+        error_msg_area.textContent = "내용을 입력해주세요."
+        error_card.style.display = "block"
+        return
+
+    run_btn.disabled = True
+    status.style.display = "block"
+
+    # [수정] 모델명을 models : gemini-2.5-flash 로 변경
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
+    
+    # 사용자가 입력한 프롬프트와 강제 제약 조건을 결합
+    full_prompt = (
+        "Role: Professional Business Editor\n"
+        "Task: Refine the provided text based on the instructions below.\n\n"
+        "--- Instructions ---\n"
+        f"{user_prompt}\n\n"
+        "--- Mandatory Constraints ---\n"
+        "1. Keep the EXACT same structure, delimiters, and spacing.\n"
+        "2. Do NOT change the layout or position of lines.\n"
+        "3. Output ONLY the refined text. No conversational response, no markdown code blocks.\n\n"
+        f"Text to refine:\n{input_text}"
+    )
+
+    payload = {"contents": [{"parts": [{"text": full_prompt}]}]}
+
+    try:
+        response = await pyfetch(
+            url=url,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(payload)
+        )
+        
+        if response.status == 200:
+            data = await response.json()
+            try:
+                refined_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                # 마크다운 블록(```)이 포함되어 올 경우 제거
+                refined_text = refined_text.replace("```", "").strip()
+                output_area.textContent = refined_text
+                result_card.style.display = "block"
+                result_card.scrollIntoView({"behavior": "smooth"})
+            except (KeyError, IndexError):
+                error_msg_area.textContent = "AI가 응답을 생성했으나 해석할 수 없습니다. (Safety Filter 차단 가능성)"
+                error_card.style.display = "block"
+        else:
+            err_json = await response.json()
+            msg = err_json.get("error", {}).get("message", "Unknown Error")
+            error_msg_area.textContent = f"API 오류 발생: {msg}"
+            error_card.style.display = "block"
+            
+    except Exception as e:
+        error_msg_area.textContent = f"연결 문제 발생: {str(e)}"
+        error_card.style.display = "block"
+    
+    finally:
+        run_btn.disabled = False
+        status.style.display = "none"
+
+run_click_proxy = create_proxy(refine_text)
+document.getElementById("runBtn").addEventListener("click", run_click_proxy)
+
+loading = document.getElementById("py-loading")
+loading.classList.add("hidden")
+window.setTimeout(create_proxy(lambda: loading.remove()), 450)
+</py-script>
+
+<script>
+document.getElementById("copyBtn").addEventListener("click", () => {
+    const text = document.getElementById("outputArea").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.innerText = "복사 완료!";
+        setTimeout(() => { btn.innerText = "복사하기"; }, 2000);
+    });
+});
+</script>
+
+</body>
+</html>
