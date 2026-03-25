@@ -8,7 +8,6 @@
     { "label": "Oracle: XPLAN문 생성", "url": "./app/app_oracle_xplan.html" },
     { "label": "Oracle: 권한백업문 생성",  "url": "./app/app_oracle_grt.html" },
     { "label": "자유게시판",  "url": "./db/db_free.html" },
-    { "label": "도움말",  "url": "./readme.html" },
-    { "label": "도움말 (md)",  "url": "./readme.md" }
+    { "label": "도움말",  "url": "./readme.html" }
   ]
 }
