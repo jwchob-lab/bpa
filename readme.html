@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPA - Operation Manual</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg:      #f2ece3;
+            --surface: #ffffff;
+            --border:  #e0d8cc;
+            --accent:  #7c5c3a;
+            --text:    #2e2318;
+            --muted:   #a0907e;
+            --danger:  #c0392b;
+            --info:    #3a7c5c;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .manual-card {
+            width: 100%;
+            max-width: 850px;
+            background: var(--surface);
+            padding: 45px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(46,35,24,0.05);
+        }
+
+        .manual-header {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 35px;
+        }
+
+        .manual-header h1 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .version-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        h2 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin: 40px 0 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2::before {
+            content: "::";
+            font-weight: bold;
+        }
+
+        .content-group {
+            margin-bottom: 25px;
+            padding-left: 10px;
+        }
+
+        .item {
+            margin-bottom: 20px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .item-detail {
+            list-style: none;
+            padding-left: 5px;
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+
+        .item-detail li::before {
+            content: "; ";
+            color: var(--accent);
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        code {
+            font-family: 'IBM Plex Mono', monospace;
+            background: #fdfaf6;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+
+        .url-text {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--info);
+            font-size: 0.85rem;
+            text-decoration: none;
+            border-bottom: 1px solid var(--info);
+        }
+
+        .issue-box {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            padding-left: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="manual-card">
+    <div class="manual-header">
+        <h1>BPA SYSTEM MANUAL</h1>
+        <div class="version-tag">v20260325 &nbsp;·&nbsp; DATABASE ADMINISTRATION TEAM</div>
+    </div>
+
+    <h2>개요</h2>
+    <div class="content-group">
+        <ul class="item-detail">
+            <li>별도 설치 없이 웹 브라우저에서 실행 가능</li>
+            <li>깃허브에 각 프로그램 레파지토리 생성 후 배포</li>
+            <li>HTML 파일 기준으로 생성되며 스크립트는 기능에 따라 상이함 (PyScript, JS, AI 등)</li>
+            <li>링크 관리는 <code>links.json</code> 파일로 별도 관리</li>
+            <li>DB 필요 시 깃허브와 연동된 Supabase DB 호출</li>
+        </ul>
+    </div>
+
+    <h2>업무자동화 (BPA)</h2>
+    <div class="content-group">
+        <div class="item">
+            <span class="item-title">BPA 메인 시스템</span>
+            <ul class="item-detail">
+                <li>URL : <a href="https://jwchob-lab.github.io/bpa/" class="url-text" target="_blank">https://jwchob-lab.github.io/bpa/</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>일반 운영 항목</h2>
+    <div class="content-group">
+        <div class="item">
+            <span class="item-title">트리거 파악</span>
+            <ul class="item-detail">
+                <li>배포 전 트리거 파악 프로그램 배포 및 내부 공유 (/w 공통 DBA 4인)</li>
+                <li>배포파일(1번) 및 트리거 사용 테이블 목록 파일(2번)을 창에 드래그하여 실행</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <span class="item-title">디스크 관리</span>
+            <ul class="item-detail">
+                <li>디스크 Full 예상 그래프 생성 (월 단위)</li>
+                <li>표 형식 TXT 파일 붙여넣기 또는 CSV 파일 업로드 지원</li>
+                <li>현재 월까지의 디스크 증가량 입력</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <span class="item-title">디스크 관리 (AI)</span>
+            <ul class="item-detail">
+                <li>제미나이 API 사용하여 예측 그래프 생성</li>
+                <li>이미지 파일 캡처하여 붙여넣기 활용 가능 (GB 기준)</li>
+                <li class="issue-box">→ [이슈] 이미지 인식 시 실제값보다 낮은 값으로 인식되는 현상 존재</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <span class="item-title">보고서 작성 (AI)</span>
+            <ul class="item-detail">
+                <li>제미나이 API를 통한 텍스트 자동 보정 및 최적화</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>데이터베이스 관리</h2>
+    <div class="content-group">
+        <div class="item">
+            <span class="item-title">오라클 권한백업</span>
+            <ul class="item-detail">
+                <li>테이블 권한 백업 요청 시 테이블 목록 입력 후 자동 실행</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <span class="item-title">오라클 XPLAN</span>
+            <ul class="item-detail">
+                <li>유저명 및 튜닝용 쿼리 입력을 통한 <code>XPLAN</code> 생성문 자동 생성</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <span class="item-title">DB 자유게시판</span>
+            <ul class="item-detail">
+                <li>깃허브에서 Supabase DB 호출 연동</li>
+                <li><code>PostgreSQL 17.6 (aarch64-linux)</code> 환경</li>
+                <li>실제 운영 시 보안 파일 분리 및 DB 권한 보완 필요</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
