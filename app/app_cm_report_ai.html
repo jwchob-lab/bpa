@@ -160,14 +160,19 @@ py-config, py-script { display: none !important; }
   <textarea id="promptInput" style="min-height: 100px;">
 1. 기존 양식은 그대로 유지 (ex: ; - 빈칸 등)
 2. 사람 이름 뒤에는 님자를 붙이도록 지정 (ex: 홍길동 -> 홍길동님)
-3. 비지니스 보고서 문구 위주로 보정</textarea>
+3. 비지니스 보고서 문구 위주로 보정
+4. 대분류는 가장 앞에 -를 배치하고 처음 단어에 () 로 감싸줘
+5. 중분류는 앞에 공백 한칸 배치하고 · 지정
+6. 하분류는 앞에 공백 두칸 배치하고 ; 지정
+7. 위 사항을 기반으로 입력받은 텍스트를 상황게 맞게 잘 정리해줘
+</textarea>
   <div class="hint">AI에게 줄 추가적인 지시사항을 수정할 수 있습니다.</div>
 </div>
 
 <div class="card">
   <div class="card-title">03. INPUT TEXT</div>
   <textarea id="textInput" placeholder="다듬고 싶은 텍스트를 입력하세요."></textarea>
-  <div class="hint">글자 위치와 구분자(-, ;, :)가 결과에서도 그대로 유지됩니다.</div>
+  <div class="hint">원하는 규칙을 추가할수 있습니다.</div>
 </div>
 
 <button class="btn-main" id="runBtn">변환 시작</button>
