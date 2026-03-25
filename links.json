@@ -3,10 +3,10 @@
     { "label": "트리거 사용 파악",  "url": "./app/app_cm_trigger.html" },
     { "label": "디스크 사용량 예측",  "url": "./app/app_cm_disk.html" },
     { "label": "디스크 사용량 예측 (ai)",  "url": "./app/app_cm_disk_ai.html" },
-    { "label": "보고서 보정 (ai)",  "url": "./app/app_cm_report_ai.html" },
+    { "label": "보고서 작성 (ai)",  "url": "./app/app_cm_report_ai.html" },
     { "label": "SQL 튜닝 (ai)", "url": "./app/app_cm_sql_ai.html" },
-    { "label": "Oracle: XPLAN문 생성", "url": "./app/app_oracle_xplan.html" },
-    { "label": "Oracle: 권한백업문 생성",  "url": "./app/app_oracle_grt.html" },
+    { "label": "Oracle: XPLAN", "url": "./app/app_oracle_xplan.html" },
+    { "label": "Oracle: 권한백업",  "url": "./app/app_oracle_grt.html" },
     { "label": "자유게시판",  "url": "./db/db_free.html" },
     { "label": "도움말",  "url": "./readme.html" }
   ]
