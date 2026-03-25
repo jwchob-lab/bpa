@@ -1,12 +1,12 @@
 {
   "links": [
-    { "label": "공통: 트리거 사용 파악",  "url": "./app/app_cm_trigger.html" },
-    { "label": "공통: 월간 디스크 사용량 예측",  "url": "./app/app_cm_disk.html" },
-    { "label": "공통: 월간 디스크 사용량 예측 (ai)",  "url": "./app/app_cm_disk_ai.html" },
-    { "label": "공통: 주간보고 보정 (ai)",  "url": "./app/app_cm_report_ai.html" },
-    { "label": "공통: SQL튜닝 (ai)", "url": "./app/app_cm_sql_ai.html" },
-    { "label": "오라클: XPLAN문 생성", "url": "./app/app_oracle_xplan.html" },
-    { "label": "오라클: 권한백업문 생성",  "url": "./app/app_oracle_grt.html" },
-    { "label": "게시판: free",  "url": "./bbs/bbs_free.html" }
+    { "label": "CM: 트리거 사용 파악",  "url": "./app/app_cm_trigger.html" },
+    { "label": "CM: 월간 디스크 사용량 예측",  "url": "./app/app_cm_disk.html" },
+    { "label": "CM: 월간 디스크 사용량 예측 (ai)",  "url": "./app/app_cm_disk_ai.html" },
+    { "label": "CM: 주간보고 보정 (ai)",  "url": "./app/app_cm_report_ai.html" },
+    { "label": "CM: SQL튜닝 (ai)", "url": "./app/app_cm_sql_ai.html" },
+    { "label": "Oracle: XPLAN문 생성", "url": "./app/app_oracle_xplan.html" },
+    { "label": "Oracle: 권한백업문 생성",  "url": "./app/app_oracle_grt.html" },
+    { "label": "DB: 자유게시판",  "url": "./bbs/bbs_free.html" }
   ]
 }
