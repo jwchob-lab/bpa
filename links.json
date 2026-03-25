@@ -7,6 +7,6 @@
     { "label": "CM: SQL튜닝 (ai)", "url": "./app/app_cm_sql_ai.html" },
     { "label": "Oracle: XPLAN문 생성", "url": "./app/app_oracle_xplan.html" },
     { "label": "Oracle: 권한백업문 생성",  "url": "./app/app_oracle_grt.html" },
-    { "label": "DB: 자유게시판",  "url": "./bbs/bbs_free.html" }
+    { "label": "DB: 자유게시판",  "url": "./db/db_free.html" }
   ]
 }
