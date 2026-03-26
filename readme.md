@@ -6,8 +6,6 @@
 * 기술 스택: HTML 기반이며 기능에 따라 PyScript, JavaScript, AI 등을 활용합니다.
 * 링크 관리: links.json 파일을 통해 통합 관리됩니다.
 * 데이터베이스: DB가 필요한 경우 깃허브와 연동된 Supabase를 호출합니다.
-<br>
-<br>
 ## 2. 구분
 ### 2.1. 일반 (General)
 > 트리거 사용 파악
@@ -36,7 +34,3 @@
 * 깃허브에서 Supabase DB 호출 가능하도록 연동
 * 환경: PostgreSQL 17.6 (aarch64-linux, gcc 15.2.0)
 * 주의: 실제 운영 시 보안 파일 분리 및 DB 권한 설정 보완 필요
-<br>
-<br>
-<br>
-
