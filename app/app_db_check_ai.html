@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPA : DB Health Check</title>
+
+<!-- PyScript -->
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:       #f2ece3;
+  --surface:  #ffffff;
+  --border:   #e0d8cc;
+  --accent:   #7c5c3a;
+  --text:     #2e2318;
+  --muted:    #a0907e;
+  --found:    #3a7c5c;
+  --notfound: #c0392b;
+  --radius:   12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 52px 16px 80px;
+}
+
+/* ── 로딩 오버레이 ── */
+#py-loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.4s;
+}
+#py-loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo { font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 600; color: var(--accent); margin-bottom: 28px; }
+.loading-bar-wrap { width: 240px; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.loading-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; animation: loadProg 2.2s ease forwards; }
+@keyframes loadProg { to { width: 92%; } }
+
+/* ── 헤더 ── */
+.header { text-align: center; margin-bottom: 40px; animation: fadeUp 0.6s ease both; }
+.header h1 { font-family: 'IBM Plex Mono', monospace; font-size: 1.75rem; font-weight: 600; color: var(--accent); }
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+
+/* ── 카드 공통 ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 26px 28px; width: 100%; max-width: 860px; margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 16px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 입력 폼 ── */
+input[type="text"], textarea, select {
+  width: 100%; background: #fafafa; border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; transition: border-color 0.2s;
+}
+input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); background: #fff; }
+textarea { min-height: 180px; resize: vertical; line-height: 1.6; white-space: pre; overflow-x: auto; }
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0907e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); background-color: #fff; }
+
+/* ── 두 컬럼 레이아웃 ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+.field-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+}
+
+.hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+
+/* ── 실행 버튼 ── */
+.btn-main {
+  width: 100%; max-width: 860px; background: var(--accent); color: #fff;
+  border: none; border-radius: 10px; padding: 16px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 20px; animation: fadeUp 0.6s 0.2s ease both;
+}
+.btn-main:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,92,58,0.2); }
+.btn-main:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 결과 출력 ── */
+.results-card {
+  display: none; width: 100%; max-width: 860px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  animation: fadeUp 0.4s ease both; margin-bottom: 40px;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.output-content {
+  padding: 24px; font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; 
+  line-height: 1.6; color: var(--text);
+  white-space: pre; overflow-x: auto; word-break: break-all;
+  background-color: #faf7f3;
+}
+
+.btn-copy {
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+  color: var(--accent); cursor: pointer;
+}
+
+/* ── 에러 카드 ── */
+.error-card {
+  display: none; width: 100%; max-width: 860px;
+  background: #fff5f5; border: 1px solid #feb2b2; border-radius: var(--radius);
+  padding: 20px 24px; margin-bottom: 40px; animation: fadeUp 0.4s ease both;
+}
+.error-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--notfound);
+  letter-spacing: 2px; font-weight: 700; margin-bottom: 10px;
+}
+.error-msg {
+  font-size: 0.85rem; color: #742a2a; line-height: 1.5; white-space: pre-wrap;
+}
+
+/* AI 로딩 애니메이션 */
+.ai-loading { display: none; text-align: center; padding: 20px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+.dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
+@keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
+
+py-config, py-script { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="py-loading">
+  <div class="loading-logo"># DB : HEALTH CHECK #</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<div class="header">
+  <h1># BPA : DB Health Check #</h1>
+  <div class="sub">AI가 DBMS 환경에 맞는 필수 점검 쿼리를 자동 생성</div>
+  <div class="sub">v20260326 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; AI</div>
+</div>
+
+<!-- 01. API Key -->
+<div class="card">
+  <div class="card-title">01. INPUT API Key</div>
+  <input type="text" id="apiKey" placeholder="Google Gemini API Key를 입력하세요">
+  <div class="hint">발급처: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Google AI Studio (무료)</a></div>
+</div>
+
+<!-- 02. DBMS 종류 + 버전 -->
+<div class="card">
+  <div class="card-title">02. DBMS 환경 설정</div>
+  <div class="two-col">
+    <div>
+      <div class="field-label">DBMS 종류</div>
+      <select id="dbmsType">
+        <option value="">-- DBMS 선택 --</option>
+        <option value="Oracle">Oracle</option>
+        <option value="MySQL">MySQL</option>
+        <option value="MariaDB">MariaDB</option>
+        <option value="PostgreSQL">PostgreSQL</option>
+        <option value="MS-SQL (SQL Server)">MS-SQL (SQL Server)</option>
+        <option value="Tibero">Tibero</option>
+        <option value="Altibase">Altibase</option>
+        <option value="DB2">DB2 (IBM)</option>
+      </select>
+    </div>
+    <div>
+      <div class="field-label">DB 버전</div>
+      <input type="text" id="dbVersion" placeholder="ex) 19c, 8.0, 14, 2019 ...">
+    </div>
+  </div>
+  <div class="hint">선택한 DBMS와 버전에 맞는 문법으로 쿼리가 생성됩니다.</div>
+</div>
+
+<!-- 03. 지시사항 -->
+<div class="card">
+  <div class="card-title">03. SYSTEM PROMPT (AI 지시사항)</div>
+  <textarea id="promptInput" style="min-height: 120px;">1. 필수 점검 시 필요한 쿼리문을 잘 정리된 한 페이지 파일로 생성해줘
+2. 카피가 용이하도록 쿼리문은 따로 분리하여 작성해줘
+3. 나머지 설명 문구들 앞에는 모두 주석 처리(--) 해줘
+4. 각 점검 항목별로 섹션을 나눠서 가독성 있게 구성해줘
+5. 점검 범위: 세션/접속, 용량/테이블스페이스, 성능/슬로우쿼리, 잠금/Lock, 에러로그 등</textarea>
+  <div class="hint">AI에게 줄 추가 지시사항을 자유롭게 수정할 수 있습니다.</div>
+</div>
+
+<!-- 04. 추가 요청 사항 (선택) -->
+<div class="card">
+  <div class="card-title">04. 추가 요청 사항 (선택)</div>
+  <textarea id="textInput" placeholder="특정 점검 항목이나 추가 요구사항을 입력하세요. (비워도 됩니다)" style="min-height: 100px;"></textarea>
+  <div class="hint">특별히 포함하고 싶은 점검 항목이나 환경 특이사항을 입력하세요.</div>
+</div>
+
+<button class="btn-main" id="runBtn">점검 쿼리 생성</button>
+
+<div class="ai-loading" id="aiStatus">AI 쿼리 생성중...<span class="dots"></span></div>
+
+<div class="error-card" id="errorCard">
+  <div class="error-title">! ERROR OCCURRED</div>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<div class="results-card" id="resultCard">
+  <div class="results-header">
+    <span class="card-title" style="margin-bottom:0">GENERATED QUERY</span>
+    <button class="btn-copy" id="copyBtn">복사하기</button>
+  </div>
+  <pre class="output-content" id="outputArea"></pre>
+</div>
+
+<py-script>
+import json
+from js import document, window, console
+from pyodide.http import pyfetch
+from pyodide.ffi import create_proxy
+
+async def generate_query(event):
+    api_key    = document.getElementById("apiKey").value.strip()
+    dbms_type  = document.getElementById("dbmsType").value.strip()
+    db_version = document.getElementById("dbVersion").value.strip()
+    user_prompt = document.getElementById("promptInput").value.strip()
+    extra_text  = document.getElementById("textInput").value.strip()
+
+    run_btn       = document.getElementById("runBtn")
+    status        = document.getElementById("aiStatus")
+    result_card   = document.getElementById("resultCard")
+    error_card    = document.getElementById("errorCard")
+    error_msg_area = document.getElementById("errorMsg")
+    output_area   = document.getElementById("outputArea")
+
+    result_card.style.display = "none"
+    error_card.style.display  = "none"
+
+    if not api_key:
+        error_msg_area.textContent = "API Key가 입력되지 않았습니다."
+        error_card.style.display = "block"
+        return
+    if not dbms_type:
+        error_msg_area.textContent = "DBMS 종류를 선택해주세요."
+        error_card.style.display = "block"
+        return
+
+    run_btn.disabled = True
+    status.style.display = "block"
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
+    version_str = f" {db_version}" if db_version else ""
+    extra_str   = f"\n\n--- 추가 요청 사항 ---\n{extra_text}" if extra_text else ""
+
+    full_prompt = (
+        f"Role: Senior DBA (Database Administrator)\n"
+        f"Target DBMS: {dbms_type}{version_str}\n\n"
+        f"Task: 위 DBMS 환경에 맞는 필수 점검 쿼리 모음을 생성하라.\n\n"
+        f"--- Instructions ---\n"
+        f"{user_prompt}\n"
+        f"{extra_str}\n\n"
+        f"--- Mandatory Constraints ---\n"
+        f"1. 반드시 {dbms_type}{version_str} 전용 문법과 시스템 뷰/테이블을 사용할 것.\n"
+        f"2. 설명/제목/섹션 헤더 등 모든 주석은 반드시 SQL 주석(--)으로 처리할 것.\n"
+        f"3. 쿼리문만 별도로 분리하여 복사하기 쉽게 작성할 것.\n"
+        f"4. 마크다운 코드블록(```)은 절대 사용하지 말 것.\n"
+        f"5. 결과물만 출력하고, 인사말이나 부가 설명을 붙이지 말 것."
+    )
+
+    payload = {"contents": [{"parts": [{"text": full_prompt}]}]}
+
+    try:
+        response = await pyfetch(
+            url=url,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(payload)
+        )
+
+        if response.status == 200:
+            data = await response.json()
+            try:
+                result_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                result_text = result_text.replace("```sql", "").replace("```", "").strip()
+                output_area.textContent = result_text
+                result_card.style.display = "block"
+                result_card.scrollIntoView({"behavior": "smooth"})
+            except (KeyError, IndexError):
+                error_msg_area.textContent = "AI가 응답을 생성했으나 해석할 수 없습니다. (Safety Filter 차단 가능성)"
+                error_card.style.display = "block"
+        else:
+            err_json = await response.json()
+            msg = err_json.get("error", {}).get("message", "Unknown Error")
+            error_msg_area.textContent = f"API 오류 발생: {msg}"
+            error_card.style.display = "block"
+
+    except Exception as e:
+        error_msg_area.textContent = f"연결 문제 발생: {str(e)}"
+        error_card.style.display = "block"
+
+    finally:
+        run_btn.disabled = False
+        status.style.display = "none"
+
+run_click_proxy = create_proxy(generate_query)
+document.getElementById("runBtn").addEventListener("click", run_click_proxy)
+
+loading = document.getElementById("py-loading")
+loading.classList.add("hidden")
+window.setTimeout(create_proxy(lambda: loading.remove()), 450)
+</py-script>
+
+<script>
+document.getElementById("copyBtn").addEventListener("click", () => {
+    const text = document.getElementById("outputArea").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.innerText = "복사 완료!";
+        setTimeout(() => { btn.innerText = "복사하기"; }, 2000);
+    });
+});
+</script>
+
+</body>
+</html>
