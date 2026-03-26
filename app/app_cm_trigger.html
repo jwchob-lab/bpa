@@ -411,9 +411,8 @@ def render_results(results: list):
     # 요약
     summary = document.getElementById("resultsSummary")
     summary.innerHTML = (
-        f'<span>총 <span class="s-num">{len(results)}</span>개</span>'
-        f'<span>발견 <span class="s-num found">{found_n}</span>개</span>'
-        f'<span>미발견 <span class="s-num notfound">{notfound_n}</span>개</span>'
+        f'<span>트리거 관련 : <span class="s-num found">{found_n}</span>개</span>'
+        f'<span>/ 측정 기준 : <span class="s-num">{len(results)}</span>개</span>'
     )
 
     # 행 생성
