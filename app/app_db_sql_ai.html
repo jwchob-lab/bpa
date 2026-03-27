@@ -12,19 +12,11 @@
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<!-- 공통 디자인 토큰 (컬러 변수) — 레이아웃/배치는 아래 style에서 원본 그대로 유지 -->
+<link rel="stylesheet" href="../theme.css">
 
 <style>
-:root {
-  --bg:       #f2ece3;
-  --surface:  #ffffff;
-  --border:   #e0d8cc;
-  --accent:   #7c5c3a;
-  --text:     #2e2318;
-  --muted:    #a0907e;
-  --found:    #3a7c5c;
-  --notfound: #c0392b;
-  --radius:   12px;
-}
+/* :root 변수는 theme.css에서 관리 */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -297,8 +289,4 @@ document.getElementById("copyBtn").addEventListener("click", () => {
 </script>
 
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> c4c70b6 (로컬 디렉토리 연결 및 배포 설정)

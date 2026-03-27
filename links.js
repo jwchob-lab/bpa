@@ -1,4 +1,4 @@
-{
+var LINKS_DATA = {
   "links": [
     { "label": "디스크 사용량 예측",  "url": "./app/app_cm_disk.html" },
     { "label": "디스크 사용량 예측 (ai)",  "url": "./app/app_cm_disk_ai.html" },
@@ -8,7 +8,6 @@
     { "label": "DB: SQL 튜닝 (ai)", "url": "./app/app_db_sql_ai.html" },
     { "label": "Oracle: XPLAN", "url": "./app/app_oracle_xplan.html" },
     { "label": "Oracle: 권한백업",  "url": "./app/app_oracle_grt.html" },
-    { "label": "자유게시판",  "url": "./db/db_free.html" },
-    { "label": "도움말",  "url": "./readme.html" }
+    { "label": "자유게시판",  "url": "./app/app_bbs_free.html" }
   ]
-}
+};
