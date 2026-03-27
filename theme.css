@@ -1,0 +1,247 @@
+/* ============================================================
+   BPA Theme  —  공통 디자인 토큰 & 기본 컴포넌트
+   이 파일만 수정하면 index + 모든 app_ 페이지 디자인이 변경됩니다.
+   ============================================================ */
+
+/* ── CSS 변수 (디자인 토큰) ─────────────────────────────────── */
+:root {
+  --bg:       #f2ece3;
+  --surface:  #ffffff;
+  --border:   #e0d8cc;
+  --accent:   #7c5c3a;
+  --text:     #2e2318;
+  --muted:    #a0907e;
+  --found:    #3a7c5c;
+  --notfound: #c0392b;
+  --radius:   12px;
+}
+
+/* ── 기본 리셋 ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── 바디 (app_ 페이지 단독 실행 시) ────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* ── 애니메이션 ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tagIn {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes loadProg { to { width: 92%; } }
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+/* ── 로딩 오버레이 ──────────────────────────────────────────── */
+#py-loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s;
+}
+#py-loading.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--accent); margin-bottom: 28px;
+}
+.loading-bar-wrap {
+  width: 240px; height: 3px;
+  background: var(--border); border-radius: 99px; overflow: hidden;
+}
+.loading-bar {
+  height: 100%; width: 0%;
+  background: var(--accent); border-radius: 99px;
+  animation: loadProg 2.2s ease forwards;
+}
+.loading-msg {
+  margin-top: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── 헤더 ───────────────────────────────────────────────────── */
+.header {
+  text-align: center; margin-bottom: 40px;
+  animation: fadeUp 0.6s ease both;
+}
+.header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem; font-weight: 600; color: var(--accent);
+}
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+.header .ver {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; margin-top: 10px;
+}
+
+/* ── 카드 ───────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  width: 100%; max-width: 700px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.08s; }
+.card:nth-child(3) { animation-delay: 0.16s; }
+
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* ── 드롭존 ─────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px; padding: 34px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(124,92,58,0.04);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon { font-size: 2rem; margin-bottom: 8px; }
+.drop-text { font-size: 0.92rem; color: var(--muted); }
+.drop-text span { color: var(--accent); font-weight: 700; }
+.drop-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.file-loaded {
+  display: none; margin-top: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem; color: var(--found);
+  animation: fadeUp 0.25s ease both;
+  position: relative; z-index: 1; pointer-events: none;
+}
+
+/* ── textarea ───────────────────────────────────────────────── */
+textarea {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; resize: vertical; min-height: 100px;
+  line-height: 1.7; transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: var(--muted); }
+
+/* ── 키워드 태그 ─────────────────────────────────────────────── */
+.kw-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-height: 0;
+}
+.kw-tag {
+  background: rgba(124,92,58,0.10);
+  border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 20px;
+  padding: 3px 11px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.77rem;
+  animation: tagIn 0.15s ease both;
+}
+
+.hint { font-size: 0.77rem; color: var(--muted); margin-top: 10px; }
+
+/* ── 버튼: 실행 ─────────────────────────────────────────────── */
+.btn-search {
+  width: 100%; max-width: 700px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 14px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.24s ease both;
+}
+.btn-search:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.btn-search:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── 결과 카드 ──────────────────────────────────────────────── */
+.results-card {
+  display: none; width: 100%; max-width: 700px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.results-header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase;
+}
+.results-summary {
+  display: flex; gap: 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted);
+}
+.s-num           { color: var(--accent); font-weight: 600; }
+.s-num.found     { color: var(--found); }
+.s-num.notfound  { color: var(--notfound); }
+
+/* ── 결과 테이블 ─────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+  padding: 10px 18px; border-bottom: 1px solid var(--border); text-align: left;
+}
+tbody tr { animation: fadeUp 0.3s ease both; }
+tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+tbody td { padding: 13px 18px; vertical-align: middle; }
+
+.dot {
+  display: inline-block; width: 9px; height: 9px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.dot.found    { background: var(--found);    box-shadow: 0 0 7px var(--found); }
+.dot.notfound { background: var(--notfound); box-shadow: 0 0 7px var(--notfound); }
+
+.kw-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; }
+.files-small { font-size: 0.71rem; color: var(--muted); margin-top: 3px; }
+
+.badge {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.73rem; font-weight: 700;
+  padding: 3px 11px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.badge.found    { background: rgba(58,124,92,0.10); color: var(--found);    border: 1px solid rgba(58,124,92,0.35); }
+.badge.notfound { background: rgba(192,57,43,0.10); color: var(--notfound); border: 1px solid rgba(192,57,43,0.30); }
+
+.count-cell {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+  color: var(--muted); text-align: right;
+}
+
+/* ── CSV 다운로드 버튼 ───────────────────────────────────────── */
+.btn-csv {
+  display: block; margin: 16px 20px 18px auto;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent);
+  cursor: pointer; transition: border-color 0.2s;
+  width: fit-content;
+}
+.btn-csv:hover { border-color: var(--accent); }
+
+/* ── PyScript 기본 스타일 숨기기 ────────────────────────────── */
+py-config, py-script { display: none !important; }

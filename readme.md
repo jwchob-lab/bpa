@@ -8,6 +8,19 @@
 * GitHub 사용 : 리포지토리 용량: 1GB, 빌드 시간당 10회, 월간 대역폭 100GB
 * 기술 스택: HTML 기반이며 기능에 따라 PyScript, JavaScript, AI 등을 활용
 * 데이터베이스: DB가 필요한 경우 깃허브와 연동된 Supabase를 호출
+## 2. 구조
+### 3.1. 프레임 구조
+> 고전 방식의 i프레임 구조 3단계 사용
+* [A] SIDEBAR (260px) -> 왼쪽
+* [B] TOPBAR (48px) -> 오른쪽 위
+* [C] MAIN VIEWER (Dynamic Content) -> 오른쪽 아래
+> 디자인 정의는 theme.css 관리
+* root/
+* ├── ./theme.css          ← 디자인 전체 정의 (여기만 수정하면 됨)
+* ├── ./index.html         ← theme.css 참조 + 사이드바 레이아웃만 정의
+* └── ./app/
+* &emsp;&emsp;&emsp;└── ./app/app_db_trigger.html  ← theme.css 참조 + 레이아웃(padding)만 정의
+---
 ## 2. 구분
 ### 2.1. 일반 (General)
 > 디스크 사용량 예측

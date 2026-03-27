@@ -5,17 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BPA</title>
 
-<script src="./links.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
-<!-- 공통 테마 (디자인 토큰 & 컴포넌트) -->
-<link rel="stylesheet" href="./theme.css">
 
 <style>
 :root {
-  /* index 전용 추가 변수 */
+  --bg:      #f2ece3;
+  --surface: #ffffff;
+  --border:  #e0d8cc;
+  --accent:  #7c5c3a;
+  --text:    #2e2318;
+  --muted:   #a0907e;
   --hover:   rgba(124,92,58,0.07);
   --active:  rgba(124,92,58,0.13);
+  --found:   #3a7c5c;
   --danger:  #c0392b;
   --sidebar: 260px;
 }
@@ -138,44 +141,6 @@ body {
 }
 .btn-home:hover .home-icon,
 .btn-home:hover .home-label { color: var(--accent); }
-
-/* ── 도움말 버튼 ── */
-.btn-help {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 22px;
-  margin: 4px 12px 2px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  user-select: none;
-  flex-shrink: 0;
-}
-.btn-help:hover {
-  background: var(--hover);
-  border-color: var(--accent);
-}
-.btn-help.active {
-  background: var(--active);
-  border-color: var(--accent);
-}
-.btn-help .help-icon {
-  font-size: 0.85rem;
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.btn-help .help-label {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.btn-help:hover .help-icon,
-.btn-help:hover .help-label { color: var(--accent); }
-.btn-help.active .help-icon,
-.btn-help.active .help-label { color: var(--accent); }
 
 .sidebar-nav {
   flex: 1;
@@ -385,20 +350,14 @@ body {
   <!-- JSON 상태 표시 -->
   <div class="json-status">
     <span class="status-dot loading" id="statusDot"></span>
-    <span id="statusText">links.js 로딩 중...</span>
+    <span id="statusText">links.json 로딩 중...</span>
     <button class="btn-reload" title="다시 불러오기" onclick="loadLinksFromJSON()">reload</button>
   </div>
 
   <!-- 홈으로 버튼 -->
   <button class="btn-home" onclick="goHome()">
-    <span class="home-icon"></span>
+    <span class="home-icon">></span>
     <span class="home-label">HOME</span>
-  </button>
-
-  <!-- 도움말 버튼 -->
-  <button class="btn-help" id="btnHelp" onclick="goHelp()">
-    <span class="help-icon"></span>
-    <span class="help-label">HELP</span>
   </button>
 
   <nav class="sidebar-nav" id="navList"></nav>
@@ -542,12 +501,13 @@ function setStatus(state, text) {
   span.textContent = text;
 }
 
-function loadLinksFromJSON() {
-  setStatus("loading", "links.js 로딩 중...");
+async function loadLinksFromJSON() {
+  setStatus("loading", "links.json 로딩 중...");
   try {
-    if (typeof LINKS_DATA === "undefined") throw new Error("LINKS_DATA 없음");
+    const res = await fetch("./links.json?t=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
 
-    const data = LINKS_DATA;
     const imported = Array.isArray(data) ? data : (data.links || []);
     links = imported.map(l => ({
       id:    l.id    || uid(),
@@ -555,13 +515,13 @@ function loadLinksFromJSON() {
       url:   l.url
     }));
 
-    setStatus("ok", `links.js  ·  ${links.length}개`);
+    setStatus("ok", `links.json  ·  ${links.length}개`);
     renderNav();
   } catch (err) {
-    setStatus("error", "links.js 없음");
+    setStatus("error", "links.json 없음");
     links = [];
     renderNav();
-    console.warn("[BPA] links.js 로드 실패:", err.message);
+    console.warn("[BPA] links.json 로드 실패:", err.message);
   }
 }
 
@@ -570,7 +530,6 @@ function loadLinksFromJSON() {
 ───────────────────────────────────── */
 function goHome() {
   activeId = null;
-  document.getElementById("btnHelp").classList.remove("active");
   renderNav();
 
   document.getElementById("topTitle").textContent = "왼쪽 링크를 선택하세요";
@@ -585,27 +544,6 @@ function goHome() {
   iframe.src = "about:blank";
 
   document.getElementById("emptyState").style.display = "";
-}
-
-/* ─────────────────────────────────────
-   도움말
-───────────────────────────────────── */
-function goHelp() {
-  activeId = null;
-  renderNav();
-
-  document.getElementById("btnHelp").classList.add("active");
-  document.getElementById("topTitle").textContent = "도움말";
-  document.getElementById("topUrl").textContent   = "./readme.html";
-
-  const btnTab = document.getElementById("btnNewTab");
-  btnTab.href = "./readme.html";
-  btnTab.classList.add("visible");
-
-  document.getElementById("emptyState").style.display = "none";
-  const iframe = document.getElementById("viewer");
-  iframe.style.display = "block";
-  iframe.src = "./readme.html";
 }
 
 /* ─────────────────────────────────────
@@ -627,14 +565,14 @@ function renderNav() {
 
   const sec = document.createElement("div");
   sec.className = "nav-section-title";
-  sec.textContent = "./APP";
+  sec.textContent = "LINKS";
   nav.appendChild(sec);
 
   links.forEach(link => {
     const item = document.createElement("div");
     item.className = "nav-item" + (link.id === activeId ? " active" : "");
     item.innerHTML = `
-      <span class="nav-icon">-</span>
+      <span class="nav-icon">◈</span>
       <span class="nav-label" title="${esc(link.url)}">${esc(link.label)}</span>
     `;
     item.addEventListener("click", () => openLink(link.id));
@@ -650,7 +588,6 @@ function openLink(id) {
   const link = links.find(l => l.id === id);
   if (!link) return;
   activeId = id;
-  document.getElementById("btnHelp").classList.remove("active");
   renderNav();
 
   document.getElementById("topTitle").textContent = link.label;
