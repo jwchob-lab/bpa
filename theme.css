@@ -1,247 +1,323 @@
 /* ============================================================
-   BPA Theme  —  공통 디자인 토큰 & 기본 컴포넌트
-   이 파일만 수정하면 index + 모든 app_ 페이지 디자인이 변경됩니다.
+   Apple Minimal Theme (AI Automation UI)
    ============================================================ */
 
-/* ── CSS 변수 (디자인 토큰) ─────────────────────────────────── */
+/* 🎨 디자인 토큰 */
 :root {
-  --bg:       #f2ece3;
+  --bg:       #f5f5f7;
   --surface:  #ffffff;
-  --border:   #e0d8cc;
-  --accent:   #7c5c3a;
-  --text:     #2e2318;
-  --muted:    #a0907e;
-  --found:    #3a7c5c;
-  --notfound: #c0392b;
-  --radius:   12px;
+  --border:   #e5e5e7;
+  --text:     #111111;
+  --muted:    #8e8e93;
+
+  --accent:   #1d1d1f;   /* 거의 블랙 (애플 스타일) */
+  --hover:    #f0f0f2;
+
+  --found:    #34c759;
+  --notfound: #ff3b30;
+
+  --radius:   16px;
 }
 
-/* ── 기본 리셋 ──────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* 기본 리셋 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* ── 바디 (app_ 페이지 단독 실행 시) ────────────────────────── */
+/* 바디 */
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── 애니메이션 ─────────────────────────────────────────────── */
+/* 애니메이션 */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes tagIn {
-  from { opacity: 0; transform: scale(0.82); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes loadProg { to { width: 92%; } }
-@keyframes pulse {
-  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
-}
 
-/* ── 로딩 오버레이 ──────────────────────────────────────────── */
-#py-loading {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.4s;
-}
-#py-loading.hidden { opacity: 0; pointer-events: none; }
-.loading-logo {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 1.4rem; font-weight: 600;
-  color: var(--accent); margin-bottom: 28px;
-}
-.loading-bar-wrap {
-  width: 240px; height: 3px;
-  background: var(--border); border-radius: 99px; overflow: hidden;
-}
-.loading-bar {
-  height: 100%; width: 0%;
-  background: var(--accent); border-radius: 99px;
-  animation: loadProg 2.2s ease forwards;
-}
-.loading-msg {
-  margin-top: 14px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
-}
-
-/* ── 헤더 ───────────────────────────────────────────────────── */
+/* 헤더 */
 .header {
-  text-align: center; margin-bottom: 40px;
-  animation: fadeUp 0.6s ease both;
-}
-.header h1 {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 1.75rem; font-weight: 600; color: var(--accent);
-}
-.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
-.header .ver {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; margin-top: 10px;
+  text-align: center;
+  margin-bottom: 44px;
+  animation: fadeUp 0.5s ease both;
 }
 
-/* ── 카드 ───────────────────────────────────────────────────── */
+.header h1 {
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header .sub {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+.header .ver {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* 카드 */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 26px 28px;
-  width: 100%; max-width: 700px;
+  padding: 28px;
+  width: 100%;
+  max-width: 720px;
   margin-bottom: 18px;
-  animation: fadeUp 0.6s ease both;
+
+  border: 1px solid var(--border);
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.04),
+    0 1px 2px rgba(0,0,0,0.06);
+
+  animation: fadeUp 0.5s ease both;
 }
-.card:nth-child(2) { animation-delay: 0.08s; }
-.card:nth-child(3) { animation-delay: 0.16s; }
 
 .card-title {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted);
-  letter-spacing: 2.5px; text-transform: uppercase;
-  margin-bottom: 16px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
 }
 
-/* ── 드롭존 ─────────────────────────────────────────────────── */
+/* 드롭존 */
 .drop-zone {
-  border: 2px dashed var(--border);
-  border-radius: 10px; padding: 34px;
-  text-align: center; cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  position: relative;
-}
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--accent);
-  background: rgba(124,92,58,0.04);
-}
-.drop-zone input[type="file"] {
-  position: absolute; inset: 0;
-  opacity: 0; cursor: pointer; width: 100%; height: 100%;
-}
-.drop-icon { font-size: 2rem; margin-bottom: 8px; }
-.drop-text { font-size: 0.92rem; color: var(--muted); }
-.drop-text span { color: var(--accent); font-weight: 700; }
-.drop-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
-
-.file-loaded {
-  display: none; margin-top: 12px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.8rem; color: var(--found);
-  animation: fadeUp 0.25s ease both;
-  position: relative; z-index: 1; pointer-events: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  padding: 36px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
 }
 
-/* ── textarea ───────────────────────────────────────────────── */
+.drop-zone:hover {
+  background: var(--hover);
+  border-color: #d1d1d6;
+}
+
+.drop-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.drop-text {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.drop-text span {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.drop-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* textarea */
 textarea {
-  width: 100%; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px 14px; color: var(--text);
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
-  outline: none; resize: vertical; min-height: 100px;
-  line-height: 1.7; transition: border-color 0.2s;
+  width: 100%;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.6;
+  transition: all 0.2s;
 }
-textarea:focus { border-color: var(--accent); }
-textarea::placeholder { color: var(--muted); }
 
-/* ── 키워드 태그 ─────────────────────────────────────────────── */
+textarea:focus {
+  outline: none;
+  border-color: #c7c7cc;
+  background: #fff;
+}
+
+/* 키워드 태그 */
 .kw-tags {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
 }
+
 .kw-tag {
-  background: rgba(124,92,58,0.10);
-  border: 1px solid var(--accent);
-  color: var(--accent); border-radius: 20px;
-  padding: 3px 11px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.77rem;
-  animation: tagIn 0.15s ease both;
+  background: #f2f2f5;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  color: var(--text);
 }
 
-.hint { font-size: 0.77rem; color: var(--muted); margin-top: 10px; }
+/* 힌트 */
+.hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
 
-/* ── 버튼: 실행 ─────────────────────────────────────────────── */
+/* 버튼 */
 .btn-search {
-  width: 100%; max-width: 700px;
-  background: var(--accent); color: #fff;
-  border: none; border-radius: 10px;
-  padding: 14px; font-size: 1rem; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-  font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px;
+  width: 100%;
+  max-width: 720px;
+  background: #1d1d1f;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
   margin-bottom: 20px;
-  animation: fadeUp 0.6s 0.24s ease both;
-}
-.btn-search:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
-.btn-search:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* ── 결과 카드 ──────────────────────────────────────────────── */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.btn-search:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+/* 결과 카드 */
 .results-card {
-  display: none; width: 100%; max-width: 700px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
+  display: none;
+  width: 100%;
+  max-width: 720px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
   animation: fadeUp 0.4s ease both;
 }
+
 .results-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 22px; border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
 }
+
 .results-header-title {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
+
 .results-summary {
-  display: flex; gap: 16px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted);
+  font-size: 0.8rem;
+  color: var(--muted);
 }
-.s-num           { color: var(--accent); font-weight: 600; }
-.s-num.found     { color: var(--found); }
-.s-num.notfound  { color: var(--notfound); }
 
-/* ── 결과 테이블 ─────────────────────────────────────────────── */
-table { width: 100%; border-collapse: collapse; }
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
 thead th {
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
-  padding: 10px 18px; border-bottom: 1px solid var(--border); text-align: left;
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding: 10px 16px;
+  text-align: left;
 }
-tbody tr { animation: fadeUp 0.3s ease both; }
-tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
-tbody td { padding: 13px 18px; vertical-align: middle; }
 
+tbody td {
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--border);
+}
+
+/* 상태 표시 */
 .dot {
-  display: inline-block; width: 9px; height: 9px;
-  border-radius: 50%; flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
 }
-.dot.found    { background: var(--found);    box-shadow: 0 0 7px var(--found); }
-.dot.notfound { background: var(--notfound); box-shadow: 0 0 7px var(--notfound); }
 
-.kw-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; }
-.files-small { font-size: 0.71rem; color: var(--muted); margin-top: 3px; }
+.dot.found {
+  background: var(--found);
+}
 
+.dot.notfound {
+  background: var(--notfound);
+}
+
+/* 배지 */
 .badge {
-  display: inline-block; font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.73rem; font-weight: 700;
-  padding: 3px 11px; border-radius: 20px; letter-spacing: 0.5px;
-}
-.badge.found    { background: rgba(58,124,92,0.10); color: var(--found);    border: 1px solid rgba(58,124,92,0.35); }
-.badge.notfound { background: rgba(192,57,43,0.10); color: var(--notfound); border: 1px solid rgba(192,57,43,0.30); }
-
-.count-cell {
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
-  color: var(--muted); text-align: right;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
 }
 
-/* ── CSV 다운로드 버튼 ───────────────────────────────────────── */
+.badge.found {
+  background: rgba(52,199,89,0.12);
+  color: var(--found);
+}
+
+.badge.notfound {
+  background: rgba(255,59,48,0.12);
+  color: var(--notfound);
+}
+
+/* CSV 버튼 */
 .btn-csv {
-  display: block; margin: 16px 20px 18px auto;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: 8px; padding: 7px 16px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent);
-  cursor: pointer; transition: border-color 0.2s;
-  width: fit-content;
+  margin: 16px;
+  margin-left: auto;
+  display: block;
+  background: #f2f2f5;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
-.btn-csv:hover { border-color: var(--accent); }
 
-/* ── PyScript 기본 스타일 숨기기 ────────────────────────────── */
-py-config, py-script { display: none !important; }
+.btn-csv:hover {
+  background: #e5e5ea;
+}
+
+/* 로딩 */
+#py-loading {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-msg {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* PyScript 숨김 */
+py-config, py-script {
+  display: none !important;
+}
