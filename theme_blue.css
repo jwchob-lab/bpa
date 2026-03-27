@@ -1,0 +1,153 @@
+:root {
+  --bg:       #f7f9fc;
+  --surface:  #ffffff;
+  --border:   #e5e7eb;
+  --accent:   #2563eb;   /* 세련된 블루 */
+  --text:     #111111;   /* 완전 검정 */
+  --muted:    #6b7280;
+  --found:    #16a34a;
+  --notfound: #dc2626;
+  --radius:   14px;
+}
+
+/* 기본 리셋 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 폰트 (크롬/엣지 안정) */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Noto Sans KR",
+    "Pretendard",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+/* 헤더 */
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.header .sub {
+  color: var(--muted);
+}
+
+/* 카드 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+/* 카드 타이틀 */
+.card-title {
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+}
+
+/* 드롭존 */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 36px;
+  transition: all 0.2s;
+}
+
+.drop-zone:hover {
+  border-color: var(--accent);
+  background: rgba(37,99,235,0.05);
+}
+
+.drop-text span {
+  color: var(--accent);
+}
+
+/* textarea */
+textarea {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+/* 키워드 태그 */
+.kw-tag {
+  background: rgba(37,99,235,0.08);
+  border: 1px solid rgba(37,99,235,0.25);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+}
+
+/* 버튼 */
+.btn-search {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.btn-search:hover {
+  opacity: 0.9;
+}
+
+/* 결과 카드 */
+.results-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* 테이블 */
+thead th {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+tbody td {
+  color: var(--text);
+}
+
+/* 상태 뱃지 */
+.badge.found {
+  background: rgba(22,163,74,0.1);
+  color: var(--found);
+}
+
+.badge.notfound {
+  background: rgba(220,38,38,0.1);
+  color: var(--notfound);
+}
+
+/* CSV 버튼 */
+.btn-csv {
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn-csv:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
