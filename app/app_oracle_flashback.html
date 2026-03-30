@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPA : Oracle Flashback</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<!-- 공통 디자인 토큰 (컬러 변수) ? 레이아웃/배치는 아래 style에서 원본 그대로 유지 -->
+<link rel="stylesheet" href="../theme.css">
+
+<style>
+/* :root 변수는 theme.css에서 관리 */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 16px 80px;
+}
+
+/* ── 헤더 ── */
+.header {
+  text-align: center; margin-bottom: 40px;
+  animation: fadeUp 0.6s ease both;
+}
+.header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem; font-weight: 600; color: var(--accent);
+}
+.header .sub { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-top: 7px; }
+.header .ver {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; margin-top: 10px;
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  width: 100%; max-width: 860px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.08s; }
+.card:nth-child(3) { animation-delay: 0.16s; }
+.card:nth-child(4) { animation-delay: 0.24s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* ── 입력 필드 ── */
+.field-row {
+  display: flex; gap: 14px; align-items: flex-start;
+  margin-bottom: 16px;
+}
+.field-row:last-child { margin-bottom: 0; }
+
+.field-group {
+  display: flex; flex-direction: column; flex: 1;
+}
+.field-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 1.5px; margin-bottom: 7px;
+}
+
+input[type="text"], input[type="date"], input[type="time"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; transition: border-color 0.2s;
+}
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus { border-color: var(--accent); }
+input::placeholder { color: var(--muted); }
+
+/* datetime 피커 래퍼 */
+.datetime-wrap {
+  display: flex; gap: 8px;
+}
+.datetime-wrap input[type="date"] { flex: 1.3; }
+.datetime-wrap input[type="time"] { flex: 1; }
+
+/* ── textarea ── */
+textarea {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
+  outline: none; resize: vertical; min-height: 130px;
+  line-height: 1.7; transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: var(--muted); }
+
+.hint { font-size: 0.77rem; color: var(--muted); margin-top: 10px; }
+
+/* ── 실행 버튼 ── */
+.btn-search {
+  width: 100%; max-width: 860px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 14px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.32s ease both;
+}
+.btn-search:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.btn-search:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── 결과 카드 ── */
+.results-card {
+  display: none; width: 100%; max-width: 860px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+  margin-bottom: 18px;
+}
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; border-bottom: 1px solid var(--border);
+}
+.results-header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase;
+}
+.results-meta {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted);
+}
+.s-num { color: var(--accent); font-weight: 600; }
+
+/* ── SQL 출력 블록 ── */
+.sql-block { margin: 0; padding: 20px 24px; }
+
+.sql-block-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.sql-pre {
+  background: #faf7f3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.85;
+  color: var(--text);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* SQL 하이라이트 */
+.sql-kw  { color: #7c5c3a; font-weight: 600; }
+.sql-str { color: #3a7c5c; }
+.sql-fn  { color: #5c3a7c; }
+.sql-com { color: #a0907e; font-style: italic; }
+
+/* ── 복사 버튼 ── */
+.btn-copy {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--accent);
+  cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.btn-copy:hover { border-color: var(--accent); }
+.btn-copy.copied { color: var(--found); border-color: var(--found); }
+
+/* ── 에러 메시지 ── */
+.error-msg {
+  display: none;
+  width: 100%; max-width: 860px;
+  background: #fff5f5; border: 1px solid #f0c0c0;
+  border-radius: 10px; padding: 14px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem; color: #c0392b;
+  margin-bottom: 18px;
+  animation: fadeUp 0.3s ease both;
+}
+</style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<div class="header">
+  <h1># BPA : Oracle Flashback #</h1>
+  <div class="sub">쿼리문과 검색 일시를 입력하면 Oracle Flashback AS OF TIMESTAMP SQL을 자동으로 생성합니다</div>
+  <div class="ver">v20260330 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; Vanilla JS</div>
+</div>
+
+<!-- ── 01. 요청자 ── -->
+<div class="card">
+  <div class="card-title">01. 요청자</div>
+  <div class="field-group">
+    <div class="field-label">REQUESTER NAME</div>
+    <input type="text" id="requesterInput" placeholder="ex) 홍길동" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="hint">쿼리 상단에 <code style="font-family:'IBM Plex Mono',monospace;">-- ...님 플래시백 요청 (YYYY-MM-DD)</code> 형식의 주석으로 자동 삽입됩니다</div>
+</div>
+
+<!-- ── 02. 유저명 ── -->
+<div class="card">
+  <div class="card-title">02. 유저명</div>
+  <div class="field-group">
+    <div class="field-label">USER NAME</div>
+    <input type="text" id="userInput" placeholder="ex) SCOTT" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="hint">테이블 앞에 붙을 스키마 오너 명을 입력하세요 &nbsp;·&nbsp; 자동으로 대문자 변환됩니다</div>
+</div>
+
+<!-- ── 03. 쿼리문 ── -->
+<div class="card">
+  <div class="card-title">03. 원본 쿼리문</div>
+  <textarea id="queryInput"
+    placeholder="ex) SELECT * FROM EMP WHERE DEPTNO = 10&#10;ex) SELECT A.COL1, B.COL2 FROM TABLE_A A JOIN TABLE_B B ON A.ID = B.ID WHERE A.STATUS = 'Y'"></textarea>
+  <div class="hint">FROM 절의 테이블명에 유저명이 자동으로 붙습니다 &nbsp;·&nbsp; 서브쿼리 포함 모든 FROM 절에 적용됩니다</div>
+</div>
+
+<!-- ── 04. 검색 일시 ── -->
+<div class="card">
+  <div class="card-title">04. 검색 일시 (Flashback 기준 시각)</div>
+  <div class="field-group">
+    <div class="field-label">TIMESTAMP ? YYYY-MM-DD HH24:MI:SS</div>
+    <div class="datetime-wrap">
+      <input type="date" id="dateInput">
+      <input type="time" id="timeInput" step="1" value="00:00:00">
+    </div>
+  </div>
+  <div class="hint">날짜와 시간을 선택하면 TO_TIMESTAMP 형식으로 자동 변환됩니다</div>
+</div>
+
+<!-- ── 생성 버튼 ── -->
+<button class="btn-search" id="generateBtn" disabled>? SQL 문 생성</button>
+
+<!-- ── 에러 메시지 ── -->
+<div class="error-msg" id="errorMsg"></div>
+
+<!-- ── 결과 카드 ── -->
+<div class="results-card" id="resultsCard">
+  <div class="results-header">
+    <span class="results-header-title">생성된 Flashback 쿼리</span>
+    <div class="results-meta" id="resultsMeta"></div>
+  </div>
+  <div class="sql-block">
+    <div class="sql-block-label">
+      <span>SQL Script</span>
+      <button class="btn-copy" id="copyBtn" onclick="copySQL()">복사</button>
+    </div>
+    <div class="sql-pre" id="sqlOutput"></div>
+  </div>
+</div>
+
+<script>
+/* ???????????????????????????????????????????????
+   유틸리티
+??????????????????????????????????????????????? */
+
+// 오늘 날짜를 기본값으로 세팅
+(function setDefaultDate() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth() + 1).padStart(2, '0');
+  const dd   = String(today.getDate()).padStart(2, '0');
+  document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
+})();
+
+/* ── 입력 유효성 검사 & 버튼 활성화 ── */
+function checkReady() {
+  const requester = document.getElementById('requesterInput').value.trim();
+  const user      = document.getElementById('userInput').value.trim();
+  const query     = document.getElementById('queryInput').value.trim();
+  const date      = document.getElementById('dateInput').value;
+  document.getElementById('generateBtn').disabled = !(requester && user && query && date);
+}
+
+document.getElementById('requesterInput').addEventListener('input', checkReady);
+document.getElementById('userInput').addEventListener('input', checkReady);
+document.getElementById('queryInput').addEventListener('input', checkReady);
+document.getElementById('dateInput').addEventListener('change', checkReady);
+document.getElementById('timeInput').addEventListener('change', checkReady);
+
+// 유저명 자동 대문자
+document.getElementById('userInput').addEventListener('input', function() {
+  const pos = this.selectionStart;
+  this.value = this.value.toUpperCase();
+  this.setSelectionRange(pos, pos);
+});
+
+/* ???????????????????????????????????????????????
+   Flashback SQL 생성 핵심 로직
+??????????????????????????????????????????????? */
+
+/**
+ * 쿼리문에서 FROM / JOIN 절의 테이블명 앞에 스키마(유저명)을 붙인다.
+ * 이미 schema.table 형태이면 건드리지 않는다.
+ */
+function attachSchema(query, schema) {
+  // FROM / JOIN 뒤에 오는 테이블명(별칭 포함) 앞에 schema. 삽입
+  // 패턴: (FROM|JOIN) [공백] 테이블명 (schema.table 형태 제외)
+  return query.replace(
+    /\b(FROM|JOIN)\s+(?![\s(])([A-Za-z_][A-Za-z0-9_$#]*)\b(?!\s*\.)/gi,
+    (match, keyword, table) => {
+      return `${keyword} ${schema}.${table.toUpperCase()}`;
+    }
+  );
+}
+
+/**
+ * Flashback AS OF TIMESTAMP 절을 추가한다.
+ * 가장 바깥쪽 FROM 절 뒤(첫 번째 테이블명 직후)에 삽입한다.
+ *
+ * 결과 형식:
+ *   SELECT ...
+ *   FROM SCHEMA.TABLE
+ *   AS OF TIMESTAMP TO_TIMESTAMP('YYYY-MM-DD HH24:MI:SS', 'YYYY-MM-DD HH24:MI:SS')
+ *   WHERE ...
+ */
+function buildFlashbackQuery(query, schema, timestamp) {
+  // 1) 스키마 붙이기
+  const schemaQuery = attachSchema(query.trim(), schema);
+
+  // 2) 첫 번째 FROM 다음 테이블명 직후에 AS OF TIMESTAMP 절 삽입
+  //    테이블명 뒤에 별칭(공백+단어), WHERE, JOIN, ON, (, 줄바꿈 등이 올 수 있음
+  const flashbackClause = `\nAS OF TIMESTAMP TO_TIMESTAMP('${timestamp}', 'YYYY-MM-DD HH24:MI:SS')`;
+
+  // FROM schema.TABLE 뒤에 AS OF 삽입 (첫 번째 FROM만)
+  const result = schemaQuery.replace(
+    /\b(FROM\s+[A-Za-z_][A-Za-z0-9_.]*)\b/i,
+    (match) => match + flashbackClause
+  );
+
+  return result;
+}
+
+/* ── timestamp 조합 ── */
+function getTimestamp() {
+  const date = document.getElementById('dateInput').value;   // YYYY-MM-DD
+  const time = document.getElementById('timeInput').value || '00:00:00'; // HH:MM:SS
+  // time 이 HH:MM 만 있을 수도 있으므로 초 보정
+  const timeFull = time.length === 5 ? time + ':00' : time;
+  return `${date} ${timeFull}`;
+}
+
+/* ── SQL 하이라이트 ── */
+function highlightSQL(sql) {
+  const KEYWORDS = [
+    'SELECT','FROM','WHERE','AND','OR','ON','IN','NOT','IS','NULL','DISTINCT',
+    'ORDER','BY','DESC','ASC','GROUP','HAVING','JOIN','LEFT','RIGHT','INNER',
+    'OUTER','FULL','CROSS','AS','OF','TIMESTAMP','WITH','UNION','ALL',
+    'INSERT','INTO','UPDATE','SET','DELETE','EXISTS','BETWEEN','LIKE',
+    'CASE','WHEN','THEN','ELSE','END','COUNT','SUM','MAX','MIN','AVG'
+  ];
+  const FUNCTIONS = ['TO_TIMESTAMP','TO_DATE','NVL','DECODE','COALESCE','TRUNC','SYSDATE','ROWNUM'];
+
+  const escape = s => s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  let res = '', i = 0;
+  while (i < sql.length) {
+    // 주석
+    if (sql.slice(i,i+2) === '--') {
+      const end = sql.indexOf('\n', i);
+      const chunk = end === -1 ? sql.slice(i) : sql.slice(i, end+1);
+      res += `<span class="sql-com">${escape(chunk)}</span>`;
+      i += chunk.length; continue;
+    }
+    // 문자열 리터럴
+    if (sql[i] === "'") {
+      let j = i+1;
+      while (j < sql.length && !(sql[j] === "'" && sql[j-1] !== "'")) j++;
+      const chunk = sql.slice(i, j+1);
+      res += `<span class="sql-str">${escape(chunk)}</span>`;
+      i = j+1; continue;
+    }
+    // 함수명
+    let fnMatch = false;
+    for (const fn of FUNCTIONS) {
+      if (sql.slice(i, i+fn.length).toUpperCase() === fn) {
+        const after = sql[i+fn.length];
+        if (!after || !/[A-Za-z0-9_]/.test(after)) {
+          res += `<span class="sql-fn">${escape(sql.slice(i, i+fn.length))}</span>`;
+          i += fn.length; fnMatch = true; break;
+        }
+      }
+    }
+    if (fnMatch) continue;
+    // 키워드
+    let kwMatch = false;
+    for (const kw of KEYWORDS) {
+      if (sql.slice(i, i+kw.length).toUpperCase() === kw) {
+        const before = i === 0 ? ' ' : sql[i-1];
+        const after  = sql[i+kw.length];
+        if (!/[A-Za-z0-9_]/.test(before) && (!after || !/[A-Za-z0-9_]/.test(after))) {
+          res += `<span class="sql-kw">${escape(sql.slice(i, i+kw.length))}</span>`;
+          i += kw.length; kwMatch = true; break;
+        }
+      }
+    }
+    if (kwMatch) continue;
+    // 일반 문자
+    res += escape(sql[i]);
+    i++;
+  }
+  return res;
+}
+
+/* ── 오류 표시 ── */
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearError() {
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+/* ── 메인 생성 ── */
+document.getElementById('generateBtn').addEventListener('click', function() {
+  clearError();
+  document.getElementById('resultsCard').style.display = 'none';
+
+  const requester = document.getElementById('requesterInput').value.trim();
+  const schema    = document.getElementById('userInput').value.trim().toUpperCase();
+  const query     = document.getElementById('queryInput').value.trim();
+  const tsValue   = getTimestamp();
+
+  // 유효성
+  if (!requester){ showError('? 요청자 이름을 입력해주세요.'); return; }
+  if (!schema)   { showError('? 유저명을 입력해주세요.'); return; }
+  if (!query)    { showError('? 쿼리문을 입력해주세요.'); return; }
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(tsValue)) {
+    showError('? 날짜와 시간을 올바르게 선택해주세요.'); return;
+  }
+
+  // 오늘 날짜 (YYYY-MM-DD)
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // 요청자 주석 + flashback SQL 조합
+  const commentLine  = `-- ${requester}님 플래시백 요청 (${todayStr})`;
+  const flashbackSQL = commentLine + '\n' + buildFlashbackQuery(query, schema, tsValue) + '\n;';
+
+  // 결과 렌더링
+  const output = document.getElementById('sqlOutput');
+  output.innerHTML = highlightSQL(flashbackSQL);
+  output.setAttribute('data-raw', flashbackSQL);
+
+  document.getElementById('resultsMeta').innerHTML =
+    `<span class="s-num">${requester}님</span> &nbsp;·&nbsp; <span class="s-num">${schema}</span> &nbsp;·&nbsp; <span class="s-num">${tsValue}</span>`;
+
+  const card = document.getElementById('resultsCard');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+/* ── 복사 ── */
+function copySQL() {
+  const raw = document.getElementById('sqlOutput').getAttribute('data-raw') || '';
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '? 복사됨';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+</script>
+
+</body>
+</html>
