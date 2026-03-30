@@ -359,7 +359,7 @@ function buildFlashbackQuery(query, schema, timestamp) {
 
   // 2) 첫 번째 FROM 다음 테이블명 직후에 AS OF TIMESTAMP 절 삽입
   //    테이블명 뒤에 별칭(공백+단어), WHERE, JOIN, ON, (, 줄바꿈 등이 올 수 있음
-  const flashbackClause = `\nAS OF TIMESTAMP TO_TIMESTAMP('${timestamp}', 'YYYY-MM-DD HH24:MI:SS')`;
+  const flashbackClause = `\nAS OF TIMESTAMP TO_TIMESTAMP('${timestamp}', 'YYYY-MM-DD HH24:MI:SS')\n`;
 
   // FROM schema.TABLE 뒤에 AS OF 삽입 (첫 번째 FROM만)
   const result = schemaQuery.replace(
