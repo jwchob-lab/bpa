@@ -1,22 +1,28 @@
 /* ============================================================
-   Apple Minimal Theme (AI Automation UI)
+   Claude Theme — AI Automation UI
    ============================================================ */
 
 /* 🎨 디자인 토큰 */
 :root {
-  --bg:       #f5f5f7;
-  --surface:  #ffffff;
-  --border:   #e5e5e7;
-  --text:     #111111;
-  --muted:    #8e8e93;
+  --bg:        #f9f8f6;
+  --surface:   #ffffff;
+  --surface-2: #f4f2ee;
+  --border:    #e8e5df;
+  --text:      #1a1714;
+  --muted:     #9b9690;
 
-  --accent:   #1d1d1f;   /* 거의 블랙 (애플 스타일) */
-  --hover:    #f0f0f2;
+  --accent:    #c96442;   /* Claude 오렌지 브라운 */
+  --accent-2:  #e8835f;
+  --hover:     rgba(201, 100, 66, 0.07);
+  --active:    rgba(201, 100, 66, 0.13);
 
-  --found:    #34c759;
-  --notfound: #ff3b30;
+  --found:     #3a9e6f;
+  --notfound:  #d95252;
+  --danger:    #c0392b;
 
-  --radius:   16px;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --sidebar:   268px;
 }
 
 /* 기본 리셋 */
@@ -31,15 +37,18 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family:
+    "Pretendard Variable",
+    "Pretendard",
     -apple-system,
     BlinkMacSystemFont,
-    "SF Pro Display",
-    "Noto Sans KR",
     "Apple SD Gothic Neo",
-    "Segoe UI",
-    Roboto,
+    "Noto Sans KR",
+    "Malgun Gothic",
     sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  word-break: keep-all;
+  line-height: 1.6;
 }
 
 /* 애니메이션 */
@@ -48,7 +57,12 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 헤더 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 헤더 ── */
 .header {
   text-align: center;
   margin-bottom: 44px;
@@ -57,14 +71,16 @@ body {
 
 .header h1 {
   font-size: 1.9rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
 }
 
 .header .sub {
   color: var(--muted);
   font-size: 0.95rem;
   margin-top: 6px;
+  font-weight: 400;
 }
 
 .header .ver {
@@ -73,7 +89,7 @@ body {
   margin-top: 8px;
 }
 
-/* 카드 */
+/* ── 카드 ── */
 .card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -81,36 +97,36 @@ body {
   width: 100%;
   max-width: 720px;
   margin-bottom: 18px;
-
   border: 1px solid var(--border);
   box-shadow:
-    0 4px 20px rgba(0,0,0,0.04),
-    0 1px 2px rgba(0,0,0,0.06);
-
+    0 2px 12px rgba(26,23,20,0.06),
+    0 1px 3px rgba(26,23,20,0.04);
   animation: fadeUp 0.5s ease both;
 }
 
 .card-title {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--muted);
-  letter-spacing: 1.2px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  font-weight: 500;
   margin-bottom: 14px;
 }
 
-/* 드롭존 */
+/* ── 드롭존 ── */
 .drop-zone {
   border: 1.5px dashed var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: 36px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: var(--surface-2);
 }
 
 .drop-zone:hover {
   background: var(--hover);
-  border-color: #d1d1d6;
+  border-color: var(--accent-2);
 }
 
 .drop-icon {
@@ -121,11 +137,12 @@ body {
 .drop-text {
   font-size: 0.95rem;
   color: var(--muted);
+  font-weight: 400;
 }
 
 .drop-text span {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .drop-sub {
@@ -134,26 +151,28 @@ body {
   margin-top: 4px;
 }
 
-/* textarea */
+/* ── textarea ── */
 textarea {
   width: 100%;
-  background: #fafafa;
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 14px;
   font-size: 0.95rem;
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.7;
+  font-family: inherit;
   transition: all 0.2s;
 }
 
 textarea:focus {
   outline: none;
-  border-color: #c7c7cc;
+  border-color: var(--accent-2);
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(201,100,66,0.1);
 }
 
-/* 키워드 태그 */
+/* ── 키워드 태그 ── */
 .kw-tags {
   display: flex;
   flex-wrap: wrap;
@@ -162,44 +181,48 @@ textarea:focus {
 }
 
 .kw-tag {
-  background: #f2f2f5;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 5px 12px;
+  padding: 4px 12px;
   font-size: 0.8rem;
   color: var(--text);
+  font-weight: 500;
 }
 
-/* 힌트 */
+/* ── 힌트 ── */
 .hint {
   font-size: 0.8rem;
   color: var(--muted);
   margin-top: 10px;
 }
 
-/* 버튼 */
+/* ── 버튼 ── */
 .btn-search {
   width: 100%;
   max-width: 720px;
-  background: #1d1d1f;
+  background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: 15px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 20px;
-
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(201,100,66,0.25);
 }
 
 .btn-search:hover {
+  background: var(--accent-2);
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 16px rgba(201,100,66,0.3);
 }
 
-/* 결과 카드 */
+/* ── 결과 카드 ── */
 .results-card {
   display: none;
   width: 100%;
@@ -216,11 +239,15 @@ textarea:focus {
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .results-header-title {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--muted);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
 .results-summary {
@@ -228,7 +255,7 @@ textarea:focus {
   color: var(--muted);
 }
 
-/* 테이블 */
+/* ── 테이블 ── */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -239,19 +266,26 @@ thead th {
   color: var(--muted);
   padding: 10px 16px;
   text-align: left;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 tbody td {
   padding: 14px 16px;
   font-size: 0.92rem;
   color: var(--text);
+  line-height: 1.5;
 }
 
 tbody tr:not(:last-child) td {
   border-bottom: 1px solid var(--border);
 }
 
-/* 상태 표시 */
+tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+/* ── 상태 표시 ── */
 .dot {
   width: 8px;
   height: 8px;
@@ -259,49 +293,50 @@ tbody tr:not(:last-child) td {
   display: inline-block;
 }
 
-.dot.found {
-  background: var(--found);
-}
+.dot.found    { background: var(--found); }
+.dot.notfound { background: var(--notfound); }
 
-.dot.notfound {
-  background: var(--notfound);
-}
-
-/* 배지 */
+/* ── 배지 ── */
 .badge {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge.found {
-  background: rgba(52,199,89,0.12);
+  background: rgba(58,158,111,0.12);
   color: var(--found);
 }
 
 .badge.notfound {
-  background: rgba(255,59,48,0.12);
+  background: rgba(217,82,82,0.12);
   color: var(--notfound);
 }
 
-/* CSV 버튼 */
+/* ── CSV 버튼 ── */
 .btn-csv {
   margin: 16px;
   margin-left: auto;
   display: block;
-  background: #f2f2f5;
-  border: none;
-  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 8px 14px;
   font-size: 0.8rem;
+  font-family: inherit;
   cursor: pointer;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.15s;
 }
 
 .btn-csv:hover {
-  background: #e5e5ea;
+  background: var(--hover);
+  border-color: var(--accent-2);
 }
 
-/* 로딩 */
+/* ── 로딩 ── */
 #py-loading {
   position: fixed;
   inset: 0;
