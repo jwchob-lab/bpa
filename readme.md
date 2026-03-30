@@ -19,12 +19,14 @@
 ### 3.2. 계층 및 경로
 * 시스템의 유지보수 효율을 위해 레이아웃, 디자인, 콘텐츠 영역을 분리하여 관리합니다.
 ```text
-root/
-├── index.html          # 메인 엔트리 포인트 (사이드바 및 프레임워크 정의)
-├── theme.css           # 전역 디자인 시스템 (컬러 토큰 및 공통 스타일)
-├── readme.html         # 시스템 도움말 (원본: readme.md)
-├── links.js            # app 호출 링크파일
-└── app/                # 프로그램 디렉토리
-    └── <$appname>      # 프로그램 실행 파일 (theme.css 참조)
+bpa/ (프로젝트 루트)
+├── .gitlab-ci.yml        <-- 깃랩 페이지 사용시 지정
+└── public/               <-- 폴더 이름을 반드시 'public'으로 만드세요
+    └── index.html          # 메인 엔트리 포인트 (사이드바 및 프레임워크 정의)
+    └── theme.css           # 전역 디자인 시스템 (컬러 토큰 및 공통 스타일)
+    └── readme.html         # 시스템 도움말 (원본: readme.md)
+    └── links.js            # app 호출 링크파일
+    └── app/                # 프로그램 디렉토리
+        └── <$appname>      # 프로그램 실행 파일 (theme.css 참조)
 ```
 ---
