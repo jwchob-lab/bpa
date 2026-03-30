@@ -55,6 +55,17 @@ body {
 .card:nth-child(3) { animation-delay: 0.16s; }
 .card:nth-child(4) { animation-delay: 0.24s; }
 
+/* ── 반반 카드 레이아웃 ── */
+.card-row {
+  display: flex; gap: 0; align-items: stretch; padding: 0;
+}
+.card-half {
+  flex: 1; padding: 26px 28px;
+}
+.card-divider {
+  width: 1px; background: var(--border); flex-shrink: 0;
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -62,8 +73,8 @@ body {
 
 .card-title {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted);
-  letter-spacing: 2.5px; text-transform: uppercase;
+  font-size: 0.82rem; color: var(--accent);
+  font-weight: 700; letter-spacing: 1.5px;
   margin-bottom: 16px;
 }
 
@@ -214,24 +225,25 @@ textarea::placeholder { color: var(--muted); }
   <div class="ver">v20260330 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; Vanilla JS</div>
 </div>
 
-<!-- ── 01. 요청자 ── -->
-<div class="card">
-  <div class="card-title">01. 요청자</div>
-  <div class="field-group">
-    <div class="field-label">REQUESTER NAME</div>
-    <input type="text" id="requesterInput" placeholder="ex) 홍길동" autocomplete="off" spellcheck="false">
+<!-- ── 01 + 02. 요청자 / 유저명 (같은 행) ── -->
+<div class="card card-row">
+  <div class="card-half">
+    <div class="card-title">01. 요청자</div>
+    <div class="field-group">
+      <div class="field-label">REQUESTER NAME</div>
+      <input type="text" id="requesterInput" placeholder="ex) 홍길동" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="hint">쿼리 상단에 <code style="font-family:'IBM Plex Mono',monospace;">-- ...님 플래시백 요청 (YYYY-MM-DD)</code> 형식 주석으로 삽입됩니다</div>
   </div>
-  <div class="hint">쿼리 상단에 <code style="font-family:'IBM Plex Mono',monospace;">-- ...님 플래시백 요청 (YYYY-MM-DD)</code> 형식의 주석으로 자동 삽입됩니다</div>
-</div>
-
-<!-- ── 02. 유저명 ── -->
-<div class="card">
-  <div class="card-title">02. 유저명</div>
-  <div class="field-group">
-    <div class="field-label">USER NAME</div>
-    <input type="text" id="userInput" placeholder="ex) SCOTT" autocomplete="off" spellcheck="false">
+  <div class="card-divider"></div>
+  <div class="card-half">
+    <div class="card-title">02. 유저명</div>
+    <div class="field-group">
+      <div class="field-label">USER NAME</div>
+      <input type="text" id="userInput" placeholder="ex) SCOTT" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="hint">테이블 앞에 붙을 스키마 오너 명을 입력하세요 &nbsp;·&nbsp; 자동 대문자 변환됩니다</div>
   </div>
-  <div class="hint">테이블 앞에 붙을 스키마 오너 명을 입력하세요 &nbsp;·&nbsp; 자동으로 대문자 변환됩니다</div>
 </div>
 
 <!-- ── 03. 쿼리문 ── -->
@@ -246,7 +258,7 @@ textarea::placeholder { color: var(--muted); }
 <div class="card">
   <div class="card-title">04. 검색 일시 (Flashback 기준 시각)</div>
   <div class="field-group">
-    <div class="field-label">TIMESTAMP ? YYYY-MM-DD HH24:MI:SS</div>
+    <div class="field-label">TIMESTAMP (YYYY-MM-DD HH24:MI:SS)</div>
     <div class="datetime-wrap">
       <input type="date" id="dateInput">
       <input type="time" id="timeInput" step="1" value="00:00:00">
@@ -256,7 +268,7 @@ textarea::placeholder { color: var(--muted); }
 </div>
 
 <!-- ── 생성 버튼 ── -->
-<button class="btn-search" id="generateBtn" disabled>? SQL 문 생성</button>
+<button class="btn-search" id="generateBtn" disabled>SQL 문 생성</button>
 
 <!-- ── 에러 메시지 ── -->
 <div class="error-msg" id="errorMsg"></div>
