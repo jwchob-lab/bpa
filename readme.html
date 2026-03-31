@@ -2,7 +2,7 @@
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>&lbrack; BPA &#xc2dc;&#xc2a4;&#xd15c; &#xc6b4;&#xc601; &#xb9e4;&#xb274;&#xc5bc; &rbrack;</title>
+            <title>BPA &#xc2dc;&#xc2a4;&#xd15c; &#xb9e4;&#xb274;&#xc5bc;</title>
             <style>
 /* From extension vscode.github */
 /*---------------------------------------------------------------------------------------------
@@ -139,13 +139,14 @@
         
         </head>
         <body class="vscode-body vscode-light">
-            <h1 id="-bpa-시스템-운영-매뉴얼-">[ BPA 시스템 운영 매뉴얼 ]</h1>
+            <h1 id="bpa-시스템-매뉴얼">BPA 시스템 매뉴얼</h1>
 <h2 id="1-개요">1. 개요</h2>
 <ul>
 <li>메인 URL : <a href="https://jwchob-lab.github.io/bpa/">https://jwchob-lab.github.io/bpa/</a></li>
 <li>사용 요건 : HTML5 지원 최신 버전 브라우저 (크롬, 엣지 등)</li>
-<li>기술 스택 : 기능에 따라 PyScript, JavaScript, AI 등을 활용</li>
-<li>GitHub : 리포지토리 용량: 1GB, 빌드 시간당 10회, 월간 대역폭 100GB</li>
+<li>기술 스택 : 기능에 따라 PyScript, JavaScript, AI 등</li>
+<li>AI 활용 : 구글 제미나이 API 무료키 사용 (사용시 모델 학습 활용 이슈)</li>
+<li>저장 서버 (GitHub) : 리포지토리 용량 1GB, 빌드 시간당 10회, 월간 대역폭 100GB</li>
 </ul>
 <h2 id="2-구조">2. 구조</h2>
 <h3 id="31-프레임-구조">3.1. 프레임 구조</h3>
@@ -174,13 +175,15 @@
 <ul>
 <li>시스템의 유지보수 효율을 위해 레이아웃, 디자인, 콘텐츠 영역을 분리하여 관리합니다.</li>
 </ul>
-<pre><code class="language-text">root/
-├── index.html          # 메인 엔트리 포인트 (사이드바 및 프레임워크 정의)
-├── theme.css           # 전역 디자인 시스템 (컬러 토큰 및 공통 스타일)
-├── readme.html         # 시스템 도움말 (원본: readme.md)
-├── links.js            # app 호출 링크파일
-└── app/                # 프로그램 디렉토리
-    └── &lt;$appname&gt;      # 프로그램 실행 파일 (theme.css 참조)
+<pre><code class="language-text">bpa/ (프로젝트 루트)
+├── .gitlab-ci.yml        &lt;-- 깃랩 페이지 사용시 지정
+└── public/               &lt;-- 폴더 이름을 반드시 &#x27;public&#x27;으로 만드세요
+    └── index.html          # 메인 엔트리 포인트 (사이드바 및 프레임워크 정의)
+    └── theme.css           # 전역 디자인 시스템 (컬러 토큰 및 공통 스타일)
+    └── readme.html         # 시스템 도움말 (원본: readme.md)
+    └── links.js            # app 호출 링크파일
+    └── app/                # 프로그램 디렉토리
+        └── &lt;$appname&gt;      # 프로그램 실행 파일 (theme.css 참조)
 </code></pre>
 <hr>
 

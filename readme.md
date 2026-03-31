@@ -1,9 +1,10 @@
-# [ BPA 시스템 운영 매뉴얼 ]
+# BPA 시스템 매뉴얼
 ## 1. 개요
 * 메인 URL : https://jwchob-lab.github.io/bpa/
 * 사용 요건 : HTML5 지원 최신 버전 브라우저 (크롬, 엣지 등)
-* 기술 스택 : 기능에 따라 PyScript, JavaScript, AI 등을 활용
-* GitHub : 리포지토리 용량: 1GB, 빌드 시간당 10회, 월간 대역폭 100GB
+* 기술 스택 : 기능에 따라 PyScript, JavaScript, AI 등
+* AI 활용 : 구글 제미나이 API 무료키 사용 (사용시 모델 학습 활용 이슈)
+* 저장 서버 (GitHub) : 리포지토리 용량 1GB, 빌드 시간당 10회, 월간 대역폭 100GB
 ## 2. 구조
 ### 3.1. 프레임 구조
 * **영역 1: Sidebar (L)**
