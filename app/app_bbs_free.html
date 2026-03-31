@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>게시판</title>
+
+<!-- Pretendard 폰트 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<!-- 공통 디자인 토큰 (컬러 변수) — 레이아웃/배치는 아래 style에서 원본 그대로 유지 -->
+<link rel="stylesheet" href="../theme.css">
+
+<style>
+/* :root 변수는 theme.css에서 관리 */
+
+/* 기본 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 컨테이너 */
+.container {
+  max-width: 820px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+/* 제목 */
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+/* 카드 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+/* 입력 */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* 버튼 */
+button {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+button:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 게시글 */
+.post {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  margin-bottom: 10px;
+}
+
+.post h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.post p {
+  font-size: 14px;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.post small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* empty */
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>게시판</h2>
+
+  <!-- 작성 -->
+  <div class="card">
+    <input id="title" placeholder="제목 입력">
+    <textarea id="content" placeholder="내용 입력"></textarea>
+    <button id="writeBtn">글 등록</button>
+  </div>
+
+  <!-- 목록 -->
+  <div class="card">
+    <div id="posts">불러오는 중...</div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://plhwwbjigsaypidcobrd.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsaHd3YmppZ3NheXBpZGNvYnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzE2NTIsImV4cCI6MjA4OTkwNzY1Mn0.AAtgL0e8GSisLDHb_caPM-HrcO3_3W041cq7XHo8BUA'
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+const postsDiv = document.getElementById('posts')
+const writeBtn = document.getElementById('writeBtn')
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr)
+  return d.toLocaleString()
+}
+
+async function loadPosts() {
+  postsDiv.innerHTML = '불러오는 중...'
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .order('id', { ascending: false })
+
+  if (error) {
+    postsDiv.innerHTML = '오류: ' + error.message
+    return
+  }
+
+  if (!data || data.length === 0) {
+    postsDiv.innerHTML = '<div class="empty">게시글이 없습니다</div>'
+    return
+  }
+
+  postsDiv.innerHTML = ''
+
+  data.forEach(post => {
+    const div = document.createElement('div')
+    div.className = 'post'
+    div.innerHTML = `
+      <h3>${post.title}</h3>
+      <p>${post.content}</p>
+      <small>${formatDate(post.created_at)}</small>
+    `
+    postsDiv.appendChild(div)
+  })
+}
+
+async function writePost() {
+  const title = document.getElementById('title').value.trim()
+  const content = document.getElementById('content').value.trim()
+
+  if (!title || !content) {
+    alert('제목과 내용을 입력하세요')
+    return
+  }
+
+  const { error } = await supabase
+    .from('posts')
+    .insert([{ title, content }])
+
+  if (error) {
+    alert('등록 실패: ' + error.message)
+    return
+  }
+
+  document.getElementById('title').value = ''
+  document.getElementById('content').value = ''
+
+  loadPosts()
+}
+
+writeBtn.addEventListener('click', writePost)
+loadPosts()
+</script>
+
+</body>
+</html>
+

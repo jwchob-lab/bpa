@@ -1,0 +1,358 @@
+/* ============================================================
+   Claude Theme — AI Automation UI
+   ============================================================ */
+
+/* 🎨 디자인 토큰 */
+:root {
+  --bg:        #f9f8f6;
+  --surface:   #ffffff;
+  --surface-2: #f4f2ee;
+  --border:    #e8e5df;
+  --text:      #1a1714;
+  --muted:     #9b9690;
+
+  --accent:    #c96442;   /* Claude 오렌지 브라운 */
+  --accent-2:  #e8835f;
+  --hover:     rgba(201, 100, 66, 0.07);
+  --active:    rgba(201, 100, 66, 0.13);
+
+  --found:     #3a9e6f;
+  --notfound:  #d95252;
+  --danger:    #c0392b;
+
+  --radius:    14px;
+  --radius-sm: 8px;
+  --sidebar:   268px;
+}
+
+/* 기본 리셋 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 바디 */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Pretendard Variable",
+    "Pretendard",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    "Malgun Gothic",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  word-break: keep-all;
+  line-height: 1.6;
+}
+
+/* 애니메이션 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 헤더 ── */
+.header {
+  text-align: center;
+  margin-bottom: 44px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.header h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.header .sub {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+.header .ver {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 720px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  box-shadow:
+    0 2px 12px rgba(26,23,20,0.06),
+    0 1px 3px rgba(26,23,20,0.04);
+  animation: fadeUp 0.5s ease both;
+}
+
+.card-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+/* ── 드롭존 ── */
+.drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 36px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--surface-2);
+}
+
+.drop-zone:hover {
+  background: var(--hover);
+  border-color: var(--accent-2);
+}
+
+.drop-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.drop-text {
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.drop-text span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.drop-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── textarea ── */
+textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.7;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(201,100,66,0.1);
+}
+
+/* ── 키워드 태그 ── */
+.kw-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.kw-tag {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ── 힌트 ── */
+.hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* ── 버튼 ── */
+.btn-search {
+  width: 100%;
+  max-width: 720px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(201,100,66,0.25);
+}
+
+.btn-search:hover {
+  background: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(201,100,66,0.3);
+}
+
+/* ── 결과 카드 ── */
+.results-card {
+  display: none;
+  width: 100%;
+  max-width: 720px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.results-header-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.results-summary {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ── 테이블 ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+tbody td {
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+/* ── 상태 표시 ── */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.found    { background: var(--found); }
+.dot.notfound { background: var(--notfound); }
+
+/* ── 배지 ── */
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge.found {
+  background: rgba(58,158,111,0.12);
+  color: var(--found);
+}
+
+.badge.notfound {
+  background: rgba(217,82,82,0.12);
+  color: var(--notfound);
+}
+
+/* ── CSV 버튼 ── */
+.btn-csv {
+  margin: 16px;
+  margin-left: auto;
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.btn-csv:hover {
+  background: var(--hover);
+  border-color: var(--accent-2);
+}
+
+/* ── 로딩 ── */
+#py-loading {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-msg {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* PyScript 숨김 */
+py-config, py-script {
+  display: none !important;
+}
