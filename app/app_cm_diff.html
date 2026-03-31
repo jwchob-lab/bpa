@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEXT DIFF</title>
+
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../theme.css">
+
+<style>
+body {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:60px 16px;
+}
+
+.container {
+  width:100%;
+  max-width:1100px;
+}
+
+/* 헤더 */
+.header {
+  text-align:center;
+  margin-bottom:40px;
+}
+.header h1 {
+  font-family:'IBM Plex Mono', monospace;
+  color: var(--accent);
+}
+.header .sub {
+  color: var(--muted);
+  margin-top:6px;
+}
+.header .ver {
+  color: var(--muted);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.72rem;
+  margin-top:8px;
+}
+
+/* 카드 타이틀 */
+.card-title {
+  color: var(--accent);
+  font-weight:700;
+  font-family:'IBM Plex Mono', monospace;
+  letter-spacing:1px;
+}
+
+/* 좌우 */
+.upload-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.card {
+  padding:24px;
+}
+
+.drop-zone {
+  padding:30px;
+  text-align:center;
+  cursor:pointer;
+}
+
+.file-loaded {
+  margin-top:10px;
+  display:none;
+  font-family:'IBM Plex Mono', monospace;
+}
+
+/* 버튼 */
+.btn-wrap {
+  margin:40px 0;
+  display:flex;
+  justify-content:center;
+}
+
+#runBtn {
+  background: var(--accent);
+  color:#fff;
+  border:none;
+  border-radius: var(--radius);
+  padding:18px 48px;
+  font-size:1.1rem;
+  font-weight:700;
+  font-family:'IBM Plex Mono', monospace;
+  cursor:pointer;
+}
+
+#runBtn:disabled {
+  opacity:0.3;
+}
+
+/* 결과 */
+.diff-view {
+  display:none;
+  grid-template-columns:1fr 1fr;
+}
+
+.panel { overflow:auto; }
+
+.del { background: rgba(255,0,0,0.08); }
+.add { background: rgba(0,255,0,0.08); }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-family:'IBM Plex Mono';
+  font-size:12px;
+}
+
+td {
+  padding:4px 8px;
+  white-space:pre;
+}
+
+.ln {
+  width:40px;
+  opacity:0.5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <h1>TEXT DIFF</h1>
+    <div class="sub">두 파일 비교 (한글 자동 인코딩 처리)</div>
+    <div class="ver">v20260331 · by jwcho · JS</div>
+  </div>
+
+  <!-- 입력 영역 -->
+  <div class="upload-grid">
+
+    <div class="card">
+      <div class="card-title">01. OLD 파일</div>
+      <div class="drop-zone" id="box1">클릭 또는 파일 드래그</div>
+      <div id="name1" class="file-loaded"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">02. NEW 파일</div>
+      <div class="drop-zone" id="box2">클릭 또는 파일 드래그</div>
+      <div id="name2" class="file-loaded"></div>
+    </div>
+
+  </div>
+
+  <!-- 버튼 -->
+  <div class="btn-wrap">
+    <button id="runBtn" disabled>
+      COMPARE (문서 비교 실행)
+    </button>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result" class="diff-view">
+    <div class="panel"><table><tbody id="out1"></tbody></table></div>
+    <div class="panel"><table><tbody id="out2"></tbody></table></div>
+  </div>
+
+</div>
+
+<script>
+let store = { old:null, new:null };
+
+async function readFile(file, key){
+  const buffer = await file.arrayBuffer();
+  let text;
+
+  try {
+    text = new TextDecoder("utf-8").decode(buffer);
+    if ((text.match(/�/g)||[]).length > 5) throw "";
+  } catch {
+    try { text = new TextDecoder("euc-kr").decode(buffer); }
+    catch { text = new TextDecoder().decode(buffer); }
+  }
+
+  store[key] = text;
+
+  const el = document.getElementById(key==="old"?"name1":"name2");
+  el.textContent = "✔ " + file.name;
+  el.style.display = "block";
+
+  if(store.old && store.new) runBtn.disabled = false;
+}
+
+function setup(boxId, key){
+  const box = document.getElementById(boxId);
+
+  box.onclick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.onchange = () => readFile(input.files[0], key);
+    input.click();
+  };
+
+  box.ondragover = e => e.preventDefault();
+  box.ondrop = e => {
+    e.preventDefault();
+    readFile(e.dataTransfer.files[0], key);
+  };
+}
+
+function row(n,t,c){
+  return `<tr class="${c}"><td class="ln">${n||""}</td><td>${escapeHtml(t||"")}</td></tr>`;
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[m]));
+}
+
+function run(){
+  const a = store.old.split("\n");
+  const b = store.new.split("\n");
+
+  let h1="", h2="";
+  const max = Math.max(a.length,b.length);
+
+  for(let i=0;i<max;i++){
+    if(a[i]===b[i]){
+      h1+=row(i+1,a[i],"");
+      h2+=row(i+1,b[i],"");
+    }else{
+      h1+=row(i+1,a[i],"del");
+      h2+=row(i+1,b[i],"add");
+    }
+  }
+
+  document.getElementById("out1").innerHTML = h1;
+  document.getElementById("out2").innerHTML = h2;
+  document.getElementById("result").style.display = "grid";
+}
+
+setup("box1","old");
+setup("box2","new");
+
+document.getElementById("runBtn").onclick = run;
+</script>
+
+</body>
+</html>
