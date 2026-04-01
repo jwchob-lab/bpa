@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BPA : DB Health Check</title>
 
-<!-- PyScript -->
-<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
-<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
-
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
@@ -149,8 +145,6 @@ select:focus { border-color: var(--accent); background-color: #fff; }
 .ai-loading { display: none; text-align: center; padding: 20px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
 .dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
 @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
-
-py-config, py-script { display: none !important; }
 </style>
 </head>
 <body>
@@ -237,113 +231,112 @@ py-config, py-script { display: none !important; }
   <pre class="output-content" id="outputArea"></pre>
 </div>
 
-<py-script>
-import json
-from js import document, window, console
-from pyodide.http import pyfetch
-from pyodide.ffi import create_proxy
-
-async def generate_query(event):
-    api_key    = document.getElementById("apiKey").value.strip()
-    dbms_type  = document.getElementById("dbmsType").value.strip()
-    db_version = document.getElementById("dbVersion").value.strip()
-    user_prompt = document.getElementById("promptInput").value.strip()
-    extra_text  = document.getElementById("textInput").value.strip()
-
-    run_btn       = document.getElementById("runBtn")
-    status        = document.getElementById("aiStatus")
-    result_card   = document.getElementById("resultCard")
-    error_card    = document.getElementById("errorCard")
-    error_msg_area = document.getElementById("errorMsg")
-    output_area   = document.getElementById("outputArea")
-
-    result_card.style.display = "none"
-    error_card.style.display  = "none"
-
-    if not api_key:
-        error_msg_area.textContent = "API Key가 입력되지 않았습니다."
-        error_card.style.display = "block"
-        return
-    if not dbms_type:
-        error_msg_area.textContent = "DBMS 종류를 선택해주세요."
-        error_card.style.display = "block"
-        return
-
-    run_btn.disabled = True
-    status.style.display = "block"
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-
-    version_str = f" {db_version}" if db_version else ""
-    extra_str   = f"\n\n--- 추가 요청 사항 ---\n{extra_text}" if extra_text else ""
-
-    full_prompt = (
-        f"Role: Senior DBA (Database Administrator)\n"
-        f"Target DBMS: {dbms_type}{version_str}\n\n"
-        f"Task: 위 DBMS 환경에 맞는 필수 점검 쿼리 모음을 생성하라.\n\n"
-        f"--- Instructions ---\n"
-        f"{user_prompt}\n"
-        f"{extra_str}\n\n"
-        f"--- Mandatory Constraints ---\n"
-        f"1. 반드시 {dbms_type}{version_str} 전용 문법과 시스템 뷰/테이블을 사용할 것.\n"
-        f"2. 설명/제목/섹션 헤더 등 모든 주석은 반드시 SQL 주석(--)으로 처리할 것.\n"
-        f"3. 쿼리문만 별도로 분리하여 복사하기 쉽게 작성할 것.\n"
-        f"4. 마크다운 코드블록(```)은 절대 사용하지 말 것.\n"
-        f"5. 결과물만 출력하고, 인사말이나 부가 설명을 붙이지 말 것."
-    )
-
-    payload = {"contents": [{"parts": [{"text": full_prompt}]}]}
-
-    try:
-        response = await pyfetch(
-            url=url,
-            method="POST",
-            headers={"Content-Type": "application/json"},
-            body=json.dumps(payload)
-        )
-
-        if response.status == 200:
-            data = await response.json()
-            try:
-                result_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                result_text = result_text.replace("```sql", "").replace("```", "").strip()
-                output_area.textContent = result_text
-                result_card.style.display = "block"
-                result_card.scrollIntoView({"behavior": "smooth"})
-            except (KeyError, IndexError):
-                error_msg_area.textContent = "AI가 응답을 생성했으나 해석할 수 없습니다. (Safety Filter 차단 가능성)"
-                error_card.style.display = "block"
-        else:
-            err_json = await response.json()
-            msg = err_json.get("error", {}).get("message", "Unknown Error")
-            error_msg_area.textContent = f"API 오류 발생: {msg}"
-            error_card.style.display = "block"
-
-    except Exception as e:
-        error_msg_area.textContent = f"연결 문제 발생: {str(e)}"
-        error_card.style.display = "block"
-
-    finally:
-        run_btn.disabled = False
-        status.style.display = "none"
-
-run_click_proxy = create_proxy(generate_query)
-document.getElementById("runBtn").addEventListener("click", run_click_proxy)
-
-loading = document.getElementById("py-loading")
-loading.classList.add("hidden")
-window.setTimeout(create_proxy(lambda: loading.remove()), 450)
-</py-script>
-
 <script>
-document.getElementById("copyBtn").addEventListener("click", () => {
+  // ── 로딩 오버레이 즉시 제거 (PyScript 대기 없음) ──
+  (function () {
+    const loading = document.getElementById("py-loading");
+    loading.classList.add("hidden");
+    setTimeout(() => loading.remove(), 450);
+  })();
+
+  // ── 쿼리 생성 ──
+  async function generateQuery() {
+    const apiKey      = document.getElementById("apiKey").value.trim();
+    const dbmsType    = document.getElementById("dbmsType").value.trim();
+    const dbVersion   = document.getElementById("dbVersion").value.trim();
+    const userPrompt  = document.getElementById("promptInput").value.trim();
+    const extraText   = document.getElementById("textInput").value.trim();
+
+    const runBtn        = document.getElementById("runBtn");
+    const status        = document.getElementById("aiStatus");
+    const resultCard    = document.getElementById("resultCard");
+    const errorCard     = document.getElementById("errorCard");
+    const errorMsgArea  = document.getElementById("errorMsg");
+    const outputArea    = document.getElementById("outputArea");
+
+    resultCard.style.display = "none";
+    errorCard.style.display  = "none";
+
+    if (!apiKey) {
+      errorMsgArea.textContent = "API Key가 입력되지 않았습니다.";
+      errorCard.style.display = "block";
+      return;
+    }
+    if (!dbmsType) {
+      errorMsgArea.textContent = "DBMS 종류를 선택해주세요.";
+      errorCard.style.display = "block";
+      return;
+    }
+
+    runBtn.disabled = true;
+    status.style.display = "block";
+
+    const versionStr = dbVersion ? ` ${dbVersion}` : "";
+    const extraStr   = extraText ? `\n\n--- 추가 요청 사항 ---\n${extraText}` : "";
+
+    const fullPrompt =
+      `Role: Senior DBA (Database Administrator)\n` +
+      `Target DBMS: ${dbmsType}${versionStr}\n\n` +
+      `Task: 위 DBMS 환경에 맞는 필수 점검 쿼리 모음을 생성하라.\n\n` +
+      `--- Instructions ---\n` +
+      `${userPrompt}\n` +
+      `${extraStr}\n\n` +
+      `--- Mandatory Constraints ---\n` +
+      `1. 반드시 ${dbmsType}${versionStr} 전용 문법과 시스템 뷰/테이블을 사용할 것.\n` +
+      `2. 설명/제목/섹션 헤더 등 모든 주석은 반드시 SQL 주석(--)으로 처리할 것.\n` +
+      `3. 쿼리문만 별도로 분리하여 복사하기 쉽게 작성할 것.\n` +
+      `4. 마크다운 코드블록(\`\`\`)은 절대 사용하지 말 것.\n` +
+      `5. 결과물만 출력하고, 인사말이나 부가 설명을 붙이지 말 것.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const payload = { contents: [{ parts: [{ text: fullPrompt }] }] };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        try {
+          let resultText = data.candidates[0].content.parts[0].text;
+          resultText = resultText.replace(/```sql/g, "").replace(/```/g, "").trim();
+          outputArea.textContent = resultText;
+          resultCard.style.display = "block";
+          resultCard.scrollIntoView({ behavior: "smooth" });
+        } catch (e) {
+          errorMsgArea.textContent = "AI가 응답을 생성했으나 해석할 수 없습니다. (Safety Filter 차단 가능성)";
+          errorCard.style.display = "block";
+        }
+      } else {
+        const msg = data?.error?.message || "Unknown Error";
+        errorMsgArea.textContent = `API 오류 발생: ${msg}`;
+        errorCard.style.display = "block";
+      }
+
+    } catch (e) {
+      errorMsgArea.textContent = `연결 문제 발생: ${e.message}`;
+      errorCard.style.display = "block";
+    } finally {
+      runBtn.disabled = false;
+      status.style.display = "none";
+    }
+  }
+
+  // ── 이벤트 바인딩 ──
+  document.getElementById("runBtn").addEventListener("click", generateQuery);
+
+  document.getElementById("copyBtn").addEventListener("click", () => {
     const text = document.getElementById("outputArea").textContent;
     navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById("copyBtn");
-        btn.innerText = "복사 완료!";
-        setTimeout(() => { btn.innerText = "복사하기"; }, 2000);
+      const btn = document.getElementById("copyBtn");
+      btn.innerText = "복사 완료!";
+      setTimeout(() => { btn.innerText = "복사하기"; }, 2000);
     });
-});
+  });
 </script>
 
 </body>
