@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BPA : Oracle Grant</title>
 
-<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
-<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
 <!-- 공통 디자인 토큰 (컬러 변수) — 레이아웃/배치는 아래 style에서 원본 그대로 유지 -->
@@ -27,37 +24,6 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 52px 16px 80px;
-}
-
-/* ── 로딩 오버레이 ── */
-#py-loading {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.4s;
-}
-#py-loading.hidden { opacity: 0; pointer-events: none; }
-.loading-logo {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 1.4rem; font-weight: 600;
-  color: var(--accent); margin-bottom: 28px;
-}
-.loading-bar-wrap {
-  width: 240px; height: 3px;
-  background: var(--border); border-radius: 99px; overflow: hidden;
-}
-.loading-bar {
-  height: 100%; width: 0%;
-  background: var(--accent); border-radius: 99px;
-  animation: loadProg 2.2s ease forwards;
-}
-@keyframes loadProg { to { width: 92%; } }
-.loading-msg {
-  margin-top: 14px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
 }
 
 /* ── 헤더 ── */
@@ -236,23 +202,14 @@ textarea::placeholder { color: var(--muted); }
 }
 .btn-copy:hover { border-color: var(--accent); }
 .btn-copy.copied { color: var(--found); border-color: var(--found); }
-
-/* ── PyScript 기본 스타일 숨기기 ── */
-py-config, py-script { display: none !important; }
 </style>
 </head>
 <body>
 
-<div id="py-loading">
-  <div class="loading-logo"># BPA : SQL GEN #</div>
-  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-msg">Python 런타임 초기화 중...</div>
-</div>
-
 <div class="header">
   <h1># BPA : Oracle Grant #</h1>
   <div class="sub">테이블명을 입력하면 권한 확인 및 Oracle Grant SQL을 자동으로 만들어줍니다</div>
-  <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; PyScript</div>
+  <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; JavaScript</div>
 </div>
 
 <div class="card">
@@ -286,210 +243,210 @@ py-config, py-script { display: none !important; }
   </div>
 </div>
 
-<py-config>
-packages = ["chardet"]
-</py-config>
-
-<script type="py">
-import re
-import chardet
-from js import document, window, console
-from pyodide.ffi import create_proxy
-
-# ── 인코딩 감지 및 디코딩 ─────────────────────────────────────────────────
-def decode_bytes(raw: bytes) -> str:
-    detected = chardet.detect(raw)
-    enc = detected.get("encoding") or "utf-8"
-    try:
-        return raw.decode(enc)
-    except Exception:
-        return raw.decode("utf-8", errors="replace")
-
-# ── 테이블명 파싱 (쉼표/줄바꿈 구분, 대문자 변환) ─────────────────────────
-def parse_tables(raw: str) -> list:
-    tokens = re.split(r"[,\n]", raw)
-    seen, result = set(), []
-    for t in tokens:
-        t = t.strip().upper()
-        if t and t not in seen:
-            seen.add(t)
-            result.append(t)
-    return result
-
-# ── SQL 생성 ──────────────────────────────────────────────────────────────
-def build_in_list(tables: list) -> str:
-    lines = [f"'{tables[0]}'"]
-    for t in tables[1:]:
-        lines.append(f",'{t}'")
-    return "\n".join(lines)
-
-def build_query_combined(tables: list) -> str:
-    in_list = build_in_list(tables)
-    q1 = (
-        "--1. 권한 확인 (GRANTABLE 이 YES 일 경우 별도 백업문 생성 필요, ex: TO 유저명 WITH GRANT OPTION)\n"
-        "SELECT * FROM DBA_TAB_PRIVS WHERE TABLE_NAME IN (\n"
-        f"{in_list}\n"
-        ") ORDER BY GRANTABLE DESC, OWNER, TABLE_NAME\n;"
-    )
-    q2 = (
-        "\n\n--2. 권한 스크립트 생성\n"
-        "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' FROM DBA_TAB_PRIVS\n"
-        "WHERE UPPER(TABLE_NAME) IN (\n"
-        f"{in_list}\n"
-        ")\n"
-        "ORDER BY TABLE_NAME\n;"
-    )
-    return q1 + q2
-
-# ── 버튼 활성화 체크 ─────────────────────────────────────────────────────
-def check_ready():
-    raw = document.getElementById("tableInput").value
-    has_tables = len(parse_tables(raw)) > 0
-    document.getElementById("generateBtn").disabled = not has_tables
-
-# ── 태그 미리보기 ─────────────────────────────────────────────────────────
-def update_tags(raw: str):
-    tables = parse_tables(raw)
-    container = document.getElementById("kwTags")
-    container.innerHTML = "".join(
-        f'<span class="kw-tag">{t}</span>' for t in tables
-    )
-
-# ── SQL 하이라이트 (간단) ─────────────────────────────────────────────────
-def highlight_sql(sql: str) -> str:
-    keywords = [
-        "SELECT", "FROM", "WHERE", "ORDER", "BY", "DESC", "ASC",
-        "IN", "AND", "OR", "ON", "UPPER", "GRANT", "TO"
-    ]
-    result = ""
-    i = 0
-    while i < len(sql):
-        if sql[i:i+2] == "--":
-            end = sql.find("\n", i)
-            if end == -1: end = len(sql)
-            else: end += 1
-            result += f'<span class="sql-com">{sql[i:end]}</span>'
-            i = end
-            continue
-        if sql[i] == "'":
-            end = sql.find("'", i+1)
-            if end == -1: end = len(sql)
-            else: end += 1
-            result += f'<span class="sql-str">{sql[i:end]}</span>'
-            i = end
-            continue
-        matched = False
-        for kw in keywords:
-            if sql[i:i+len(kw)].upper() == kw:
-                after = sql[i+len(kw):i+len(kw)+1]
-                if not after or not (after.isalnum() or after == "_"):
-                    result += f'<span class="sql-kw">{sql[i:i+len(kw)]}</span>'
-                    i += len(kw)
-                    matched = True
-                    break
-        if not matched:
-            c = sql[i]
-            if c in "<>&\"":
-                escape_map = {"<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;"}
-                result += escape_map[c]
-            else:
-                result += c
-            i += 1
-    return result
-
-# ── 결과 렌더링 ───────────────────────────────────────────────────────────
-def render_results(tables: list):
-    combined_sql = build_query_combined(tables)
-
-    document.getElementById("resultsSummary").innerHTML = (
-        f'테이블 <span class="s-num">{len(tables)}</span>개'
-    )
-
-    # 통합 출력
-    target = document.getElementById("sqlOutputCombined")
-    target.innerHTML = highlight_sql(combined_sql)
-    target.setAttribute("data-raw", combined_sql)
-
-    card = document.getElementById("resultsCard")
-    card.style.display = "block"
-    card.scrollIntoView({"behavior": "smooth", "block": "start"})
-
-# ── 파일 로드 ─────────────────────────────────────────────────────────────
-async def load_kw_files(js_files):
-    ta = document.getElementById("tableInput")
-    lines, loaded = [], []
-    for i in range(js_files.length):
-        f = js_files.item(i)
-        buf = await f.arrayBuffer()
-        raw = bytes(window.Uint8Array.new(buf))
-        txt = decode_bytes(raw).strip()
-        lines.append(txt)
-        loaded.append(f.name)
-    ta.value = "\n".join(lines)
-    label = loaded[0] if len(loaded) == 1 else f"{len(loaded)}개 파일: {', '.join(loaded)}"
-    el = document.getElementById("kwFileLoaded")
-    el.textContent = f"? {label}"
-    el.style.display = "block"
-    update_tags(ta.value)
-    check_ready()
-
-async def on_kw_file_change(event):
-    files = event.target.files
-    if files.length > 0:
-        await load_kw_files(files)
-
-async def on_kw_drop(event):
-    event.preventDefault()
-    document.getElementById("kwDropZone").classList.remove("dragover")
-    files = event.dataTransfer.files
-    if files.length > 0:
-        await load_kw_files(files)
-
-def on_kw_dragover(event):
-    event.preventDefault()
-    document.getElementById("kwDropZone").classList.add("dragover")
-
-def on_kw_dragleave(event):
-    document.getElementById("kwDropZone").classList.remove("dragover")
-
-def on_table_input(event):
-    update_tags(event.target.value)
-    check_ready()
-
-def on_generate_click(event):
-    raw = document.getElementById("tableInput").value
-    tables = parse_tables(raw)
-    if not tables: return
-    render_results(tables)
-
-# 이벤트 바인딩
-document.getElementById("kwFileInput").addEventListener("change", create_proxy(on_kw_file_change))
-kd = document.getElementById("kwDropZone")
-kd.addEventListener("dragover",  create_proxy(on_kw_dragover))
-kd.addEventListener("dragleave", create_proxy(on_kw_dragleave))
-kd.addEventListener("drop",      create_proxy(on_kw_drop))
-document.getElementById("tableInput").addEventListener("input", create_proxy(on_table_input))
-document.getElementById("generateBtn").addEventListener("click", create_proxy(on_generate_click))
-
-loading = document.getElementById("py-loading")
-loading.classList.add("hidden")
-window.setTimeout(create_proxy(lambda: loading.remove()), 450)
-</script>
-
 <script>
+// ── 테이블명 파싱 (쉼표/줄바꿈 구분, 대문자 변환, 중복 제거) ───────────────
+function parseTables(raw) {
+  const seen = new Set();
+  const result = [];
+  for (const token of raw.split(/[,\n]/)) {
+    const t = token.trim().toUpperCase();
+    if (t && !seen.has(t)) {
+      seen.add(t);
+      result.push(t);
+    }
+  }
+  return result;
+}
+
+// ── SQL 생성 ──────────────────────────────────────────────────────────────
+function buildInList(tables) {
+  return tables.map((t, idx) => (idx === 0 ? `'${t}'` : `,'${t}'`)).join('\n');
+}
+
+function buildQueryCombined(tables) {
+  const inList = buildInList(tables);
+  const q1 =
+    '--1. 권한 확인 (GRANTABLE 이 YES 일 경우 별도 백업문 생성 필요, ex: TO 유저명 WITH GRANT OPTION)\n' +
+    'SELECT * FROM DBA_TAB_PRIVS WHERE TABLE_NAME IN (\n' +
+    `${inList}\n` +
+    ') ORDER BY GRANTABLE DESC, OWNER, TABLE_NAME\n;';
+  const q2 =
+    "\n\n--2. 권한 스크립트 생성\n" +
+    "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' FROM DBA_TAB_PRIVS\n" +
+    'WHERE UPPER(TABLE_NAME) IN (\n' +
+    `${inList}\n` +
+    ')\n' +
+    'ORDER BY TABLE_NAME\n;';
+  return q1 + q2;
+}
+
+// ── SQL 하이라이트 (간단) ─────────────────────────────────────────────────
+const KEYWORDS = [
+  'SELECT','FROM','WHERE','ORDER','BY','DESC','ASC',
+  'IN','AND','OR','ON','UPPER','GRANT','TO'
+];
+
+function highlightSQL(sql) {
+  let result = '';
+  let i = 0;
+  const n = sql.length;
+
+  while (i < n) {
+    // 주석 --
+    if (sql.slice(i, i + 2) === '--') {
+      let end = sql.indexOf('\n', i);
+      end = end === -1 ? n : end + 1;
+      result += `<span class="sql-com">${sql.slice(i, end)}</span>`;
+      i = end;
+      continue;
+    }
+    // 문자열 ''
+    if (sql[i] === "'") {
+      let end = sql.indexOf("'", i + 1);
+      end = end === -1 ? n : end + 1;
+      result += `<span class="sql-str">${sql.slice(i, end)}</span>`;
+      i = end;
+      continue;
+    }
+    // 키워드
+    let matched = false;
+    for (const kw of KEYWORDS) {
+      const kl = kw.length;
+      if (sql.slice(i, i + kl).toUpperCase() === kw) {
+        const after = sql[i + kl] ?? '';
+        if (!after || !/[\w]/.test(after)) {
+          result += `<span class="sql-kw">${sql.slice(i, i + kl)}</span>`;
+          i += kl;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (!matched) {
+      const c = sql[i];
+      const escMap = { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' };
+      result += escMap[c] ?? c;
+      i++;
+    }
+  }
+  return result;
+}
+
+// ── 버튼 활성화 체크 ─────────────────────────────────────────────────────
+function checkReady() {
+  const raw = document.getElementById('tableInput').value;
+  document.getElementById('generateBtn').disabled = parseTables(raw).length === 0;
+}
+
+// ── 태그 미리보기 ─────────────────────────────────────────────────────────
+function updateTags(raw) {
+  const tables = parseTables(raw);
+  document.getElementById('kwTags').innerHTML =
+    tables.map(t => `<span class="kw-tag">${t}</span>`).join('');
+}
+
+// ── 결과 렌더링 ───────────────────────────────────────────────────────────
+function renderResults(tables) {
+  const combinedSQL = buildQueryCombined(tables);
+
+  document.getElementById('resultsSummary').innerHTML =
+    `테이블 <span class="s-num">${tables.length}</span>개`;
+
+  const target = document.getElementById('sqlOutputCombined');
+  target.innerHTML = highlightSQL(combinedSQL);
+  target.setAttribute('data-raw', combinedSQL);
+
+  const card = document.getElementById('resultsCard');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── 파일 로드 (인코딩 자동 감지) ─────────────────────────────────────────
+async function loadFiles(fileList) {
+  const ta = document.getElementById('tableInput');
+  const lines = [];
+  const loaded = [];
+
+  for (const file of fileList) {
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+
+    // BOM 감지: UTF-8 BOM (EF BB BF) → utf-8, UTF-16 LE BOM (FF FE) → utf-16le
+    let encoding = 'utf-8';
+    if (bytes[0] === 0xFF && bytes[1] === 0xFE) encoding = 'utf-16le';
+    else if (bytes[0] === 0xFE && bytes[1] === 0xFF) encoding = 'utf-16be';
+    else {
+      // EUC-KR 휴리스틱: 0x80 이상 바이트가 있으면 euc-kr 시도
+      const hasHighByte = bytes.some(b => b > 0x7F);
+      if (hasHighByte) {
+        try {
+          const decoded = new TextDecoder('euc-kr').decode(bytes);
+          // 디코딩 결과에 replacement char(U+FFFD)가 없으면 euc-kr로 판단
+          if (!decoded.includes('\uFFFD')) encoding = 'euc-kr';
+        } catch (_) {}
+      }
+    }
+
+    const text = new TextDecoder(encoding).decode(bytes).trim();
+    lines.push(text);
+    loaded.push(file.name);
+  }
+
+  ta.value = lines.join('\n');
+  const label = loaded.length === 1 ? loaded[0] : `${loaded.length}개 파일: ${loaded.join(', ')}`;
+  const el = document.getElementById('kwFileLoaded');
+  el.textContent = `✔ ${label}`;
+  el.style.display = 'block';
+  updateTags(ta.value);
+  checkReady();
+}
+
+// ── 복사 ─────────────────────────────────────────────────────────────────
 function copySQL() {
-  const el = document.getElementById("sqlOutputCombined");
-  const raw = el.getAttribute("data-raw") || el.innerText;
+  const el  = document.getElementById('sqlOutputCombined');
+  const raw = el.getAttribute('data-raw') || el.innerText;
   navigator.clipboard.writeText(raw).then(() => {
-    const btn = document.getElementById("copyBtnCombined");
-    btn.textContent = "✔ 복사됨";
-    btn.classList.add("copied");
+    const btn = document.getElementById('copyBtnCombined');
+    btn.textContent = '✔ 복사됨';
+    btn.classList.add('copied');
     setTimeout(() => {
-      btn.textContent = "복사";
-      btn.classList.remove("copied");
+      btn.textContent = '복사';
+      btn.classList.remove('copied');
     }, 1800);
   });
 }
+
+// ── 이벤트 바인딩 ─────────────────────────────────────────────────────────
+document.getElementById('kwFileInput').addEventListener('change', e => {
+  if (e.target.files.length > 0) loadFiles(Array.from(e.target.files));
+});
+
+const dropZone = document.getElementById('kwDropZone');
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files);
+  if (files.length > 0) loadFiles(files);
+});
+
+document.getElementById('tableInput').addEventListener('input', e => {
+  updateTags(e.target.value);
+  checkReady();
+});
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const raw    = document.getElementById('tableInput').value;
+  const tables = parseTables(raw);
+  if (!tables.length) return;
+  renderResults(tables);
+});
 </script>
 
 </body>
