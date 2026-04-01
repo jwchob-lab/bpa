@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BPA : Oralce Xplan</title>
 
-<!-- PyScript -->
-<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
-<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
-
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
@@ -29,37 +25,6 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 52px 16px 80px;
-}
-
-/* ── 로딩 오버레이 ── */
-#py-loading {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.4s;
-}
-#py-loading.hidden { opacity: 0; pointer-events: none; }
-.loading-logo {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 1.4rem; font-weight: 600;
-  color: var(--accent); margin-bottom: 28px;
-}
-.loading-bar-wrap {
-  width: 240px; height: 3px;
-  background: var(--border); border-radius: 99px; overflow: hidden;
-}
-.loading-bar {
-  height: 100%; width: 0%;
-  background: var(--accent); border-radius: 99px;
-  animation: loadProg 2.2s ease forwards;
-}
-@keyframes loadProg { to { width: 92%; } }
-.loading-msg {
-  margin-top: 14px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem; color: var(--muted); letter-spacing: 1px;
 }
 
 /* ── 헤더 ── */
@@ -232,25 +197,15 @@ textarea::placeholder { color: var(--muted); }
   background: var(--accent); color: #fff; border-color: var(--accent);
 }
 .btn-csv.all:hover { opacity: 0.85; }
-
-/* ── PyScript 기본 스타일 숨기기 ── */
-py-config, py-script { display: none !important; }
 </style>
 </head>
 <body>
 
-<!-- 로딩 오버레이 -->
-<div id="py-loading">
-  <div class="loading-logo"># BPA : XPLAN #</div>
-  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-msg">Python 런타임 초기화 중...</div>
-</div>
-
 <!-- 헤더 -->
 <div class="header">
   <h1># BPA : XPLAN 쿼리 생성 #</h1>
-  <div class="sub">튜닝용 풀쿼리를 입력하면 실행계획 확인용 XPLAN 쿼리를 자동으로 생성합니다</div>
-  <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; PyScript</div>
+  <div class="sub">Oracle 실행계획 수집을 위한 XPLAN 쿼리를 자동으로 생성합니다</div>
+  <div class="ver">v20260323 &nbsp;·&nbsp; by jwcho &nbsp;·&nbsp; JavaScript</div>
 </div>
 
 <!-- 01. 유저명 + 쿼리 입력 -->
@@ -314,191 +269,179 @@ py-config, py-script { display: none !important; }
 
 </div>
 
-<!-- PyScript 설정 -->
-<py-config>
-</py-config>
-
-<script type="py">
-import re
-from js import document, window
-from pyodide.ffi import create_proxy
-
-# ── 세미콜론 제거 및 트림 ──────────────────────────────────────────────────
-def clean_query(raw: str) -> str:
-    return raw.strip().rstrip(";").rstrip()
-
-# ── 쿼리 들여쓰기 (4칸) ───────────────────────────────────────────────────
-def indent_query(query: str, spaces: int = 2) -> str:
-    pad = " " * spaces
-    return "\n".join(pad + line for line in query.split("\n"))
-
-# ── 쿼리 빌드 ─────────────────────────────────────────────────────────────
-def build_step1(schema: str) -> str:
-    if schema.strip():
-        return f"ALTER SESSION SET CURRENT_SCHEMA = {schema.strip().upper()} ;"
-    return "-- ALTER SESSION SET CURRENT_SCHEMA = 유저명 ;  (스키마 미입력)"
-
-def build_step2(query: str) -> str:
-    indented = indent_query(clean_query(query), 2)
-    return (
-        "SELECT /*+ GATHER_PLAN_STATISTICS */ * FROM (\n"
-        f"{indented}\n"
-        ") ;"
-    )
-
-STEP3 = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL,NULL,'ALLSTATS LAST'));"
-
-def build_all(schema: str, query: str) -> str:
-    return build_step1(schema) + "\n\n" + build_step2(query) + "\n\n" + STEP3
-
-# ── SQL 하이라이트 ─────────────────────────────────────────────────────────
-KEYWORDS = [
-    "SELECT","FROM","WHERE","ORDER","GROUP","BY","DESC","ASC","IN","AND","OR",
-    "ON","INNER","LEFT","RIGHT","OUTER","JOIN","HAVING","UNION","ALL","DISTINCT",
-    "CASE","WHEN","THEN","ELSE","END","AS","SET","ALTER","SESSION","INSERT",
-    "UPDATE","DELETE","WITH","TABLE","NOT","NULL","IS","BETWEEN","LIKE",
-    "EXISTS","ROWNUM","CONNECT","START","PRIOR","NOCYCLE","LEVEL"
-]
-
-def esc(c: str) -> str:
-    return {"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}.get(c, c)
-
-def highlight_sql(sql: str) -> str:
-    result = ""
-    i = 0
-    n = len(sql)
-    while i < n:
-        # 주석 --
-        if sql[i:i+2] == "--":
-            end = sql.find("\n", i)
-            end = n if end == -1 else end + 1
-            chunk = "".join(esc(c) for c in sql[i:end])
-            result += f'<span class="sql-com">{chunk}</span>'
-            i = end
-            continue
-        # 힌트 /*+ ... */
-        if sql[i:i+4] == "/*+ ":
-            end = sql.find("*/", i)
-            end = n if end == -1 else end + 2
-            chunk = "".join(esc(c) for c in sql[i:end])
-            result += f'<span class="sql-hint">{chunk}</span>'
-            i = end
-            continue
-        # 문자열 ''
-        if sql[i] == "'":
-            end = sql.find("'", i+1)
-            end = n if end == -1 else end + 1
-            chunk = "".join(esc(c) for c in sql[i:end])
-            result += f'<span class="sql-str">{chunk}</span>'
-            i = end
-            continue
-        # 키워드
-        matched = False
-        for kw in KEYWORDS:
-            kl = len(kw)
-            if sql[i:i+kl].upper() == kw:
-                after = sql[i+kl:i+kl+1]
-                if not after or not (after.isalnum() or after == "_"):
-                    result += f'<span class="sql-kw">{sql[i:i+kl]}</span>'
-                    i += kl
-                    matched = True
-                    break
-        if not matched:
-            result += esc(sql[i])
-            i += 1
-    return result
-
-# ── 버튼 활성화 ───────────────────────────────────────────────────────────
-def check_ready():
-    q = document.getElementById("queryInput").value.strip()
-    document.getElementById("generateBtn").disabled = not bool(q)
-
-# ── 결과 렌더링 ───────────────────────────────────────────────────────────
-def render_results(schema: str, query: str):
-    s1  = build_step1(schema)
-    s2  = build_step2(query)
-    s3  = STEP3
-    all_ = build_all(schema, query)
-
-    line_count = len(clean_query(query).split("\n"))
-    schema_disp = schema.strip().upper() if schema.strip() else "(미입력)"
-    document.getElementById("resultsSummary").textContent = (
-        f"SCHEMA: {schema_disp}  ·  원본 {line_count}줄"
-    )
-
-    for eid, raw in [
-        ("sqlOutput1", s1),
-        ("sqlOutput2", s2),
-        ("sqlOutput3", s3),
-        ("sqlOutputAll", all_),
-    ]:
-        el = document.getElementById(eid)
-        el.innerHTML  = highlight_sql(raw)
-        el.setAttribute("data-raw", raw)
-
-    card = document.getElementById("resultsCard")
-    card.style.display = "block"
-    card.scrollIntoView({"behavior": "smooth", "block": "start"})
-
-# ── 이벤트 핸들러 ─────────────────────────────────────────────────────────
-def on_query_input(event):
-    check_ready()
-
-def on_schema_input(event):
-    check_ready()
-
-def on_generate_click(event):
-    schema = document.getElementById("schemaInput").value
-    query  = document.getElementById("queryInput").value
-    if not query.strip():
-        return
-    render_results(schema, query)
-
-# ── 바인딩 ────────────────────────────────────────────────────────────────
-document.getElementById("queryInput").addEventListener(
-    "input", create_proxy(on_query_input))
-document.getElementById("schemaInput").addEventListener(
-    "input", create_proxy(on_schema_input))
-document.getElementById("generateBtn").addEventListener(
-    "click", create_proxy(on_generate_click))
-
-# ── 로딩 제거 ─────────────────────────────────────────────────────────────
-loading = document.getElementById("py-loading")
-loading.classList.add("hidden")
-window.setTimeout(create_proxy(lambda: loading.remove()), 450)
-</script>
-
-<!-- 복사 / 다운로드 -->
 <script>
-const rawMap = {};
+// ── 세미콜론 제거 및 트림 ──────────────────────────────────────────────────
+function cleanQuery(raw) {
+  return raw.trim().replace(/;+\s*$/, '').trimEnd();
+}
 
+// ── 쿼리 들여쓰기 (2칸) ───────────────────────────────────────────────────
+function indentQuery(query, spaces = 2) {
+  const pad = ' '.repeat(spaces);
+  return query.split('\n').map(line => pad + line).join('\n');
+}
+
+// ── 쿼리 빌드 ─────────────────────────────────────────────────────────────
+function buildStep1(schema) {
+  const s = schema.trim();
+  if (s) {
+    return `ALTER SESSION SET CURRENT_SCHEMA = ${s.toUpperCase()} ;`;
+  }
+  return '-- ALTER SESSION SET CURRENT_SCHEMA = 유저명 ;  (스키마 미입력)';
+}
+
+function buildStep2(query) {
+  const indented = indentQuery(cleanQuery(query), 2);
+  return `SELECT /*+ GATHER_PLAN_STATISTICS */ * FROM (\n${indented}\n) ;`;
+}
+
+const STEP3 = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL,NULL,'ALLSTATS LAST'));";
+
+function buildAll(schema, query) {
+  return buildStep1(schema) + '\n\n' + buildStep2(query) + '\n\n' + STEP3;
+}
+
+// ── SQL 하이라이트 ─────────────────────────────────────────────────────────
+const KEYWORDS = [
+  'SELECT','FROM','WHERE','ORDER','GROUP','BY','DESC','ASC','IN','AND','OR',
+  'ON','INNER','LEFT','RIGHT','OUTER','JOIN','HAVING','UNION','ALL','DISTINCT',
+  'CASE','WHEN','THEN','ELSE','END','AS','SET','ALTER','SESSION','INSERT',
+  'UPDATE','DELETE','WITH','TABLE','NOT','NULL','IS','BETWEEN','LIKE',
+  'EXISTS','ROWNUM','CONNECT','START','PRIOR','NOCYCLE','LEVEL'
+];
+
+function escHtml(c) {
+  return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] ?? c;
+}
+
+function highlightSQL(sql) {
+  let result = '';
+  let i = 0;
+  const n = sql.length;
+
+  while (i < n) {
+    // 주석 --
+    if (sql.slice(i, i + 2) === '--') {
+      let end = sql.indexOf('\n', i);
+      end = end === -1 ? n : end + 1;
+      const chunk = sql.slice(i, end).split('').map(escHtml).join('');
+      result += `<span class="sql-com">${chunk}</span>`;
+      i = end;
+      continue;
+    }
+    // 힌트 /*+ ... */
+    if (sql.slice(i, i + 4) === '/*+ ') {
+      let end = sql.indexOf('*/', i);
+      end = end === -1 ? n : end + 2;
+      const chunk = sql.slice(i, end).split('').map(escHtml).join('');
+      result += `<span class="sql-hint">${chunk}</span>`;
+      i = end;
+      continue;
+    }
+    // 문자열 ''
+    if (sql[i] === "'") {
+      let end = sql.indexOf("'", i + 1);
+      end = end === -1 ? n : end + 1;
+      const chunk = sql.slice(i, end).split('').map(escHtml).join('');
+      result += `<span class="sql-str">${chunk}</span>`;
+      i = end;
+      continue;
+    }
+    // 키워드
+    let matched = false;
+    for (const kw of KEYWORDS) {
+      const kl = kw.length;
+      if (sql.slice(i, i + kl).toUpperCase() === kw) {
+        const after = sql[i + kl] ?? '';
+        if (!after || !/[\w]/.test(after)) {
+          result += `<span class="sql-kw">${sql.slice(i, i + kl)}</span>`;
+          i += kl;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (!matched) {
+      result += escHtml(sql[i]);
+      i++;
+    }
+  }
+  return result;
+}
+
+// ── 버튼 활성화 ───────────────────────────────────────────────────────────
+function checkReady() {
+  const q = document.getElementById('queryInput').value.trim();
+  document.getElementById('generateBtn').disabled = !q;
+}
+
+// ── 결과 렌더링 ───────────────────────────────────────────────────────────
+function renderResults(schema, query) {
+  const s1   = buildStep1(schema);
+  const s2   = buildStep2(query);
+  const s3   = STEP3;
+  const all  = buildAll(schema, query);
+
+  const lineCount  = cleanQuery(query).split('\n').length;
+  const schemaDisp = schema.trim() ? schema.trim().toUpperCase() : '(미입력)';
+  document.getElementById('resultsSummary').textContent =
+    `SCHEMA: ${schemaDisp}  ·  원본 ${lineCount}줄`;
+
+  const outputs = [
+    ['sqlOutput1',   s1],
+    ['sqlOutput2',   s2],
+    ['sqlOutput3',   s3],
+    ['sqlOutputAll', all],
+  ];
+  for (const [eid, raw] of outputs) {
+    const el = document.getElementById(eid);
+    el.innerHTML = highlightSQL(raw);
+    el.setAttribute('data-raw', raw);
+  }
+
+  const card = document.getElementById('resultsCard');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── 복사 ─────────────────────────────────────────────────────────────────
 function copySQL(key) {
-  const idMap = { 1: "sqlOutput1", 2: "sqlOutput2", 3: "sqlOutput3", all: "sqlOutputAll" };
-  const btnMap = { 1: "copyBtn1", 2: "copyBtn2", 3: "copyBtn3", all: "copyBtnAll" };
+  const idMap  = { 1: 'sqlOutput1', 2: 'sqlOutput2', 3: 'sqlOutput3', all: 'sqlOutputAll' };
+  const btnMap = { 1: 'copyBtn1',   2: 'copyBtn2',   3: 'copyBtn3',   all: 'copyBtnAll' };
   const el  = document.getElementById(idMap[key]);
-  const raw = el?.getAttribute("data-raw") || el?.innerText || "";
+  const raw = el?.getAttribute('data-raw') || el?.innerText || '';
   if (!raw) return;
   navigator.clipboard.writeText(raw).then(() => {
-    const btn = document.getElementById(btnMap[key]);
+    const btn  = document.getElementById(btnMap[key]);
     const orig = btn.textContent;
-    btn.textContent = "? 복사됨";
-    btn.classList.add("copied");
+    btn.textContent = '✔ 복사됨';
+    btn.classList.add('copied');
     setTimeout(() => {
       btn.textContent = orig;
-      btn.classList.remove("copied");
+      btn.classList.remove('copied');
     }, 1800);
   });
 }
 
 function downloadTxt() {
-  const raw = document.getElementById("sqlOutputAll")?.getAttribute("data-raw") || "";
+  const raw = document.getElementById('sqlOutputAll')?.getAttribute('data-raw') || '';
   if (!raw) return;
-  const blob = new Blob(["\uFEFF" + raw], { type: "text/plain;charset=utf-8;" });
+  const blob = new Blob(['\uFEFF' + raw], { type: 'text/plain;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href = url; a.download = "bpa_xplan_query.txt";
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'bpa_xplan_query.txt';
   a.click(); URL.revokeObjectURL(url);
 }
+
+// ── 이벤트 바인딩 ─────────────────────────────────────────────────────────
+document.getElementById('queryInput').addEventListener('input', checkReady);
+document.getElementById('schemaInput').addEventListener('input', checkReady);
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const schema = document.getElementById('schemaInput').value;
+  const query  = document.getElementById('queryInput').value;
+  if (!query.trim()) return;
+  renderResults(schema, query);
+});
 </script>
 
 </body>
