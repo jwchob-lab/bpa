@@ -27,5 +27,6 @@
 └── links.js                       # app 호출 링크파일
 └── app/<$appname>                 # 프로그램 실행 파일 (../theme.css 참조)
 └── .github/workflows/deploy.yml   # 깃허브 자동 배포(CI/CD) 사용시 필요
+└── .git/                          # 프로그램 구동 무관 (로컬 개발환경과 깃허브 연동)
 ```
 ---
