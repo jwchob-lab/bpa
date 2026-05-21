@@ -268,17 +268,27 @@ function buildQueryCombined(tables) {
   const inList = buildInList(tables);
   const q1 =
     '--1. 권한 확인 (GRANTABLE 이 YES 일 경우 별도 백업문 생성 필요, ex: TO 유저명 WITH GRANT OPTION)\n' +
-    'SELECT * FROM DBA_TAB_PRIVS WHERE TABLE_NAME IN (\n' +
+    'SELECT GRANTABLE, OWNER, TABLE_NAME, COUNT(1) FROM DBA_TAB_PRIVS WHERE TABLE_NAME IN (\n' +
     `${inList}\n` +
-    ') ORDER BY GRANTABLE DESC, OWNER, TABLE_NAME\n;';
+    ') GROUP BY GRANTABLE, OWNER, TABLE_NAME\n' +
+    'ORDER BY GRANTABLE DESC, OWNER, TABLE_NAME\n;';
   const q2 =
-    "\n\n--2. 권한 스크립트 생성\n" +
-    "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' FROM DBA_TAB_PRIVS\n" +
+    "\n\n--2. 권한 스크립트 생성 (GRANTABLE: N)\n" +
+    "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||';' as DDL_GRANTABLE_N FROM DBA_TAB_PRIVS\n" +
     'WHERE UPPER(TABLE_NAME) IN (\n' +
     `${inList}\n` +
     ')\n' +
+    'AND GRANTABLE=' + "'NO'" + '\n' +
     'ORDER BY TABLE_NAME\n;';
-  return q1 + q2;
+  const q3 =
+    "\n\n--3. 권한 스크립트 생성 (GRANTABLE: Y)\n" +
+    "SELECT 'GRANT '||PRIVILEGE||' ON '||OWNER||'.'||TABLE_NAME||' TO '||GRANTEE||' WITH GRANT OPTION ;' as DDL_GRANTABLE_Y FROM DBA_TAB_PRIVS\n" +
+    'WHERE UPPER(TABLE_NAME) IN (\n' +
+    `${inList}\n` +
+    ')\n' +
+    'AND GRANTABLE=' + "'YES'" + '\n' +
+    'ORDER BY TABLE_NAME\n;';
+  return q1 + q2 + q3;
 }
 
 // ── SQL 하이라이트 (간단) ─────────────────────────────────────────────────
